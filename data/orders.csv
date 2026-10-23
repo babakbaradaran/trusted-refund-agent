@@ -1,0 +1,16 @@
+order_id,customer_id,order_date,delivered_date,status,item_name,category,amount,currency,final_sale,refunded_amount
+1001,C-01,2026-10-05,2026-10-09,delivered,Ceramic Pour-Over Set,kitchen,$42.00,USD,no,0
+1002,C-02,2026-09-28,2026-10-03,Delivered,Noise-Cancelling Headphones,electronics,"$1,249.00",USD,no,0
+1003,C-03,2026-08-01,2026-08-06,delivered,Wool Throw Blanket,home,$89.50,USD,no,0
+1004,C-01,2026-10-12,2026-10-16,delivered,Clearance Desk Lamp,home,$24.99,USD,yes,0
+1005,C-04,2026-10-01,,shipped,Trail Running Shoes,apparel,$135.00,USD,no,0
+1006,C-02,2026-10-10,2026-10-14,delivered,Espresso Grinder,kitchen,$310.00,USD,no,310.00
+1007,C-05,2026-10-11,2026-10-15,delivered,Linen Shirt,apparel, 58.00 ,usd,NO,0
+1008,C-03,2026-10-08,2026-10-13,delivered,4K Monitor,electronics,$499.99,USD,no,100.00
+1009,C-04,2026-10-18,,placed,Yoga Mat,fitness,$29.00,USD,no,0
+1010,C-05,2026-10-02,2026-10-07,delivered,Smart Watch,electronics,$399.00,USD,no,0
+1011,,2026-10-03,2026-10-06,delivered,Mystery Box,misc,$15.00,USD,no,0
+1012,C-01,2026-10-04,2026-10-02,delivered,Coffee Beans,kitchen,$18.00,USD,no,0
+1013,C-02,2026-10-05,2026-10-08,delivered,Phone Case,electronics,-$12.00,USD,no,0
+1014,C-03,not-a-date,,shipped,Desk Chair,home,$220.00,USD,no,0
+1015,C-04,2026-10-06,2026-10-09,lost-in-space,Water Bottle,fitness,$19.00,USD,no,0

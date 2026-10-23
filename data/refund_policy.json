@@ -1,0 +1,11 @@
+{
+  "version": "2026-09",
+  "auto_approve_limit": "50.00",
+  "max_data_age_hours": 24,
+  "reasons": {
+    "damaged":       {"window_days": 30, "refund_percent": 100, "allow_final_sale": true,  "needs_delivery": true},
+    "wrong_item":    {"window_days": 30, "refund_percent": 100, "allow_final_sale": true,  "needs_delivery": true},
+    "not_delivered": {"window_days": 60, "refund_percent": 100, "allow_final_sale": true,  "needs_delivery": false, "min_days_since_order": 10},
+    "changed_mind":  {"window_days": 14, "refund_percent": 90,  "allow_final_sale": false, "needs_delivery": true}
+  }
+}

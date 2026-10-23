@@ -1,0 +1,7 @@
+[
+  {"customer_id": "C-01", "name": "Maya Chen", "email": "maya.chen@example.com", "tier": "standard"},
+  {"customer_id": "C-02", "name": "Omar Haddad", "email": "omar.haddad@example.com", "tier": "vip"},
+  {"customer_id": "C-03", "name": "Lena Fischer", "email": "lena.fischer@example.com", "tier": "standard"},
+  {"customer_id": "C-04", "name": "Diego Alvarez", "email": "diego.alvarez@example.com", "tier": "standard"},
+  {"customer_id": "C-05", "name": "Priya Nair", "email": "priya.nair@example.com", "tier": "vip"}
+]

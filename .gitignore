@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.db
+reports/screenshots/*.png
+reports/junit/
+!reports/screenshots/.gitkeep
+.env
