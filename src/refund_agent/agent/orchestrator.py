@@ -163,8 +163,11 @@ class Orchestrator:
                 self._execute_refund(run, step)
             return None
         run.final_reply = proposal.customer_reply
-        status = RunStatus.ESCALATED if proposal.decision == Decision.ESCALATE else RunStatus.COMPLETED
-        self._finish(run, status)
+        if proposal.decision == Decision.ESCALATE:
+            run.error = "Needs a human: " + (proposal.rationale or "agent chose to escalate")
+            self._finish(run, RunStatus.ESCALATED)
+        else:
+            self._finish(run, RunStatus.COMPLETED)
         return None
 
     def _escalate(self, run: Run, step: int, problems: list[str]) -> None:
