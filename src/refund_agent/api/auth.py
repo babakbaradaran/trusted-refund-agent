@@ -1,6 +1,7 @@
 """API-key login with two roles: agent (start and view runs) and supervisor (also approve or reject)."""
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 
 from fastapi import Depends, Header, HTTPException, Request, status
@@ -20,7 +21,8 @@ def current_caller(request: Request, x_api_key: str | None = Header(default=None
     role = request.app.state.settings.api_keys.get(x_api_key)
     if role is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unknown API key")
-    return Caller(key_hint=f"{role}:{x_api_key[:4]}…", role=role)
+    fingerprint = hashlib.sha256(x_api_key.encode()).hexdigest()[:8]  # identifies the key without revealing it
+    return Caller(key_hint=f"{role}:{fingerprint}", role=role)
 
 
 def require(role: str):

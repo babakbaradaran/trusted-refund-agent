@@ -38,6 +38,8 @@ class ClaudeLLM:
         except anthropic.APIStatusError as exc:
             code = "MODEL_UNAVAILABLE" if exc.status_code >= 500 else "MODEL_REQUEST_REJECTED"
             raise LLMError(code, exc.message) from exc
+        except anthropic.APIError as exc:  # e.g. a response that fails SDK validation
+            raise LLMError("MODEL_ERROR", str(exc)) from exc
 
         if resp.stop_reason == "refusal":
             raise LLMError("MODEL_REFUSED", "Model declined the request")

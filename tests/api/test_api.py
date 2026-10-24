@@ -1,4 +1,6 @@
 """HTTP contract: success, input validation, permissions, and failure behaviour."""
+import re
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -180,7 +182,7 @@ def test_unsafe_request_is_blocked(client):
     assert body["status"] == "blocked" and body["proposal"] is None
 
 
-def test_unexpected_crash_returns_clean_500():
+def test_crash_inside_a_run_fails_the_run_without_leaking_details():
     class Exploding:
         name = "boom"
 
@@ -189,7 +191,24 @@ def test_unexpected_crash_returns_clean_500():
 
     client = TestClient(create_app(Settings(), llm_factory=Exploding), raise_server_exceptions=False)
     res = start(client)
+    assert res.status_code == 201 and res.json()["status"] == "failed"
+    assert "RuntimeError" in res.json()["error"] and "secret" not in res.text
+
+
+def test_unexpected_crash_returns_clean_500(app, monkeypatch):
+    def boom(*a, **k):
+        raise RuntimeError("secret internals")
+
+    monkeypatch.setattr(app.state.orchestrator, "start", boom)
+    res = start(TestClient(app, raise_server_exceptions=False))
     assert res.status_code == 500 and "secret" not in res.text and res.json()["request_id"]
+
+
+def test_approver_is_recorded_without_exposing_the_key(client):
+    run_id = start(client).json()["run_id"]
+    client.post(f"/api/runs/{run_id}/approve", json={}, headers=SUPERVISOR)
+    approver = client.get(f"/api/runs/{run_id}", headers=AGENT).json()["approval"]["by"]
+    assert re.fullmatch(r"supervisor:[0-9a-f]{8}", approver)  # a hash, not part of the key
 
 
 def test_llm_error_type_is_reported(client, app):

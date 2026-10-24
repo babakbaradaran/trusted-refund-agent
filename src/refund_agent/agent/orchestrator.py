@@ -61,10 +61,18 @@ class Orchestrator:
             run.error = f"Request blocked by input guardrail ({guard.category})"
             return self._finish(run, RunStatus.BLOCKED)
 
-        llm = FaultyLLM(self.llm_factory(), fault_set)
-        run.model = f"{llm.name} (prompt {PROMPT_VERSION})"
-        self.store.save(run)
-        self._loop(run, llm, fault_set)
+        try:
+            llm = FaultyLLM(self.llm_factory(), fault_set)
+            run.model = f"{llm.name} (prompt {PROMPT_VERSION})"
+            self.store.save(run)
+            self._loop(run, llm, fault_set)
+        except Exception as exc:  # never leave a run stuck in "running"
+            logger.exception("run crashed", extra={"fields": {"run_id": run.run_id}})
+            self._event(run, len(run.events), "error", "crash", {"type": type(exc).__name__})
+            run.error = (f"Internal error during the run ({type(exc).__name__}). "
+                         "Check the steps before retrying.")
+            run.final_reply = HOLDING_REPLY
+            self._finish(run, RunStatus.FAILED)
         return run
 
     def _loop(self, run: Run, llm: LLM, faults: set[Fault]) -> None:

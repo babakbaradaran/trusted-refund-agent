@@ -129,3 +129,9 @@ def test_full_agent_loop_with_fake_claude(make_orchestrator):
     assert roles == ["user", "assistant", "user", "assistant", "user", "assistant"]
     results = client.calls[-1]["messages"][4]["content"]
     assert results[0]["type"] == "tool_result" and results[0]["tool_use_id"] == "t2"
+
+
+def test_other_sdk_errors_become_llm_errors():
+    with pytest.raises(LLMError) as exc:
+        ClaudeLLM(client=FakeClient(anthropic.APIError("weird", request=REQ, body=None))).next_turn("s", [], TOOLS)
+    assert exc.value.code == "MODEL_ERROR"
