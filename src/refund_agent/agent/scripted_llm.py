@@ -14,7 +14,8 @@ from typing import Any
 from .llm import ModelTurn, ToolCall, tool_use_block
 
 REASON_WORDS = [
-    ("damaged", r"broken|damaged|cracked|smashed|defect|doesn'?t work|not working|stopped working"),
+    ("damaged", r"broken|damaged|cracked|smashed|torn|a tear|ripped|dented|defect"
+                r"|doesn'?t work|not working|stopped working"),
     ("wrong_item", r"wrong (item|size|colou?r|product)|not what i ordered|different item"),
     ("not_delivered", r"never (arrived|came|got)|not (arrived|delivered|received)|hasn'?t arrived|where is my"),
     ("changed_mind", r"changed my mind|don'?t (want|need) it|no longer (want|need)|return it"),

@@ -12,7 +12,7 @@ def test_find_order_id(text, expected):
 
 
 @pytest.mark.parametrize("text,expected", [
-    ("it arrived cracked", "damaged"), ("you sent the wrong size", "wrong_item"),
+    ("it arrived cracked", "damaged"), ("there is a tear in it", "damaged"), ("you sent the wrong size", "wrong_item"),
     ("it never arrived", "not_delivered"), ("I changed my mind", "changed_mind"), ("hi", None),
 ])
 def test_find_reason(text, expected):
