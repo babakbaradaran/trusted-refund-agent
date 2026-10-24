@@ -9,7 +9,8 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-_POOL = cf.ThreadPoolExecutor(max_workers=8, thread_name_prefix="tool")
+READ_POOL = cf.ThreadPoolExecutor(max_workers=8, thread_name_prefix="tool")
+ACTION_POOL = cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="action")  # hung reads can't block payouts
 
 
 class ToolError(Exception):
@@ -54,9 +55,10 @@ class ToolSpec:
 
 
 class ToolRegistry:
-    def __init__(self, timeout_s: float = 2.0, retries: int = 1):
+    def __init__(self, timeout_s: float = 2.0, retries: int = 1, pool: cf.ThreadPoolExecutor = READ_POOL):
         self.timeout_s = timeout_s
         self.retries = retries
+        self.pool = pool
         self._tools: dict[str, ToolSpec] = {}
 
     def register(self, spec: ToolSpec) -> None:
@@ -97,7 +99,7 @@ class ToolRegistry:
                 return result
 
     def _run_with_timeout(self, spec: ToolSpec, parsed: BaseModel) -> Any:
-        future = _POOL.submit(spec.func, parsed)
+        future = self.pool.submit(spec.func, parsed)
         try:
             return future.result(timeout=self.timeout_s)
         except cf.TimeoutError as exc:

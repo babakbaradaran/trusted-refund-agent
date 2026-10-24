@@ -90,12 +90,16 @@ def check_proposal(p: Proposal, facts: dict[str, Any]) -> Verdict:
 
     if "STALE_DATA" in errors and p.decision != Decision.ESCALATE:
         problems.append("data is stale; only escalation is allowed")
+    if p.decision in (Decision.REFUND, Decision.DENY) and p.order_id not in facts.get("orders", {}):
+        problems.append(f"{p.decision.value} for an order that was never looked up")
     if p.decision == Decision.REFUND:
         elig = facts.get("eligibility", {}).get(p.order_id or "")
         if elig is None:
             problems.append("refund proposed without an eligibility check")
         elif not elig["eligible"]:
             problems.append("refund proposed but policy says not eligible")
+        elif p.reason is None or p.reason.value != elig["reason"]:
+            problems.append(f"refund reason {p.reason} differs from the checked reason {elig['reason']}")
         elif p.amount <= 0 or p.amount > Decimal(elig["eligible_amount"]):
             problems.append(f"refund {p.amount} does not match eligible amount {elig['eligible_amount']}")
     elif p.decision == Decision.DENY:

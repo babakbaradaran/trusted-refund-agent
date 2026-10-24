@@ -85,7 +85,7 @@ def test_schema_is_closed_for_strict_tool_use():
 # --- refund tools ---
 
 def agent_tools(repo, faults=()):
-    return build_agent_tools(repo, NOW, set(faults), timeout_s=0.2)
+    return build_agent_tools(repo, PaymentsGateway(), NOW, set(faults), timeout_s=0.2)
 
 
 def test_lookup_order_hides_private_customer_data(repo):
@@ -111,7 +111,7 @@ def test_stale_data_fault(repo):
 
 def test_real_staleness_check_uses_export_time(repo):
     from datetime import timedelta
-    tools = build_agent_tools(repo, NOW + timedelta(days=2), set(), timeout_s=0.2)
+    tools = build_agent_tools(repo, PaymentsGateway(), NOW + timedelta(days=2), set(), timeout_s=0.2)
     assert tools.call("lookup_order", {"order_id": "1001"}).error_code == "STALE_DATA"
 
 
@@ -150,3 +150,17 @@ def test_payments_down_moves_no_money():
     result = build_action_tools(gw, {Fault.PAYMENTS_DOWN}, timeout_s=0.2).call(
         "issue_refund", {"order_id": "1002", "amount": "10.00", "idempotency_key": "run_abc123"})
     assert result.error_code == "DEPENDENCY_UNAVAILABLE" and result.attempts == 2 and gw.payouts == []
+
+
+def test_eligibility_tool_also_refuses_stale_data(repo):
+    result = agent_tools(repo, [Fault.STALE_DATA]).call(
+        "check_refund_eligibility", {"order_id": "1001", "reason": "damaged"})
+    assert result.error_code == "STALE_DATA"
+
+
+def test_eligibility_counts_refunds_we_already_paid(repo):
+    gw = PaymentsGateway()
+    gw.refund("1008", Decimal("100.00"), "run_earlier1")
+    tools = build_agent_tools(repo, gw, NOW, set(), timeout_s=0.2)
+    data = tools.call("check_refund_eligibility", {"order_id": "1008", "reason": "wrong_item"}).data
+    assert data["eligible_amount"] == "299.99"  # 499.99 - 100 in the export - 100 paid by us

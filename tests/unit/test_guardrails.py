@@ -7,7 +7,7 @@ from refund_agent.domain.models import Decision, Proposal
 
 FACTS = {
     "orders": {"1001": {"order_id": "1001", "amount": "42.00", "refunded_amount": "0.00"}},
-    "eligibility": {"1001": {"order_id": "1001", "eligible": True, "eligible_amount": "42.00"}},
+    "eligibility": {"1001": {"order_id": "1001", "reason": "damaged", "eligible": True, "eligible_amount": "42.00"}},
     "missing_orders": [], "errors": [],
 }
 

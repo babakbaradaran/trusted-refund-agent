@@ -118,3 +118,46 @@ def test_every_run_has_a_trace(orch):
     kinds = [e.kind for e in run.events]
     assert kinds[0] == "guardrail" and "llm_call" in kinds and "tool_call" in kinds
     assert all(e.duration_ms is not None for e in run.events if e.kind in ("llm_call", "tool_call"))
+
+
+# ---- found in code review ----------------------------------------------------------------------
+
+def test_same_order_cannot_be_refunded_twice_across_runs(orch, payments):
+    first = orch.start("Order 1001 arrived broken", "agent")
+    second = orch.start("Order 1001 arrived broken", "agent")
+    assert first.status == RunStatus.COMPLETED and first.refund_id
+    assert second.proposal.decision == "deny" and "already been fully refunded" in second.final_reply
+    assert len(payments.payouts) == 1
+
+
+def test_second_approval_for_same_order_is_stopped_at_payout(orch, payments):
+    a = orch.start("Order 1002 is broken", "agent")
+    b = orch.start("Order 1002 is broken", "agent")  # both proposed before either was paid
+    orch.approve(a.run_id, by="supervisor")
+    out = orch.approve(b.run_id, by="supervisor")
+    assert out.status == RunStatus.ESCALATED and "order changed since the proposal" in out.error
+    assert len(payments.payouts) == 1
+
+
+def test_payment_timeout_with_retry_reconciles_through_idempotency(orch, payments):
+    run = orch.start("Order 1002 is broken", "agent", faults=["payments_timeout"])
+    out = orch.approve(run.run_id, by="supervisor")
+    call = next(e for e in out.events if e.name == "issue_refund")
+    assert call.data["attempts"] == 2 and call.data["output"]["duplicate"] is True
+    assert out.status == RunStatus.COMPLETED and len(payments.payouts) == 1
+
+
+def test_payment_timeout_without_retry_is_marked_unknown(repo, payments):
+    from refund_agent.agent.orchestrator import Orchestrator
+    from refund_agent.config import Settings
+    from refund_agent.state.store import RunStore
+
+    orch = Orchestrator(repo, RunStore(), payments, Settings(tool_timeout_s=0.2, tool_retries=0), ScriptedLLM)
+    run = orch.start("Order 1002 is broken", "agent", faults=["payments_timeout"])
+    out = orch.approve(run.run_id, by="supervisor")
+    assert out.status == RunStatus.AWAITING_APPROVAL and "status unknown" in out.error
+    assert len(payments.payouts) == 1  # the provider did pay
+    with pytest.raises(InvalidTransition, match="may have gone through"):
+        orch.reject(run.run_id, by="supervisor", note="changed my mind")
+    done = orch.approve(run.run_id, by="supervisor")  # same key: finds the existing payout
+    assert done.status == RunStatus.COMPLETED and len(payments.payouts) == 1

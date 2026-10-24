@@ -14,11 +14,11 @@ from pydantic import ValidationError
 from ..config import Settings
 from ..data_access.repository import ShopRepository
 from ..domain.models import Approval, Decision, Proposal, Run, RunStatus, TraceEvent
-from ..domain.policy import needs_human_approval
+from ..domain.policy import evaluate_eligibility, needs_human_approval
 from ..observability import logger
 from ..state.store import RunStore
 from ..tools.faults import Fault, parse_faults
-from ..tools.refund_tools import PaymentsGateway, build_action_tools, build_agent_tools
+from ..tools.refund_tools import PaymentsGateway, build_action_tools, build_agent_tools, with_our_refunds
 from ..tools.registry import ToolResult
 from .fault_wrappers import FaultyLLM
 from .guardrails import check_proposal, check_reply, check_request
@@ -68,7 +68,7 @@ class Orchestrator:
         return run
 
     def _loop(self, run: Run, llm: LLM, faults: set[Fault]) -> None:
-        tools = build_agent_tools(self.repo, self.settings.now, faults, self.settings.tool_timeout_s,
+        tools = build_agent_tools(self.repo, self.payments, self.settings.now, faults, self.settings.tool_timeout_s,
                                   self.settings.tool_retries)
         schemas = tools.schemas() + [submit_resolution_schema()]
         messages: list[dict[str, Any]] = [{"role": "user", "content": _wrap_customer_message(run.customer_message)}]
@@ -199,15 +199,28 @@ class Orchestrator:
             run = self.store.get(run_id)
             if run.status != RunStatus.AWAITING_APPROVAL:
                 raise InvalidTransition(f"Run is {run.status.value}; only awaiting_approval runs can be rejected")
+            if run.facts.get("payment_unknown"):
+                raise InvalidTransition("A payment attempt timed out and may have gone through. "
+                                        "Approve again to check it before rejecting.")
             run.approval = Approval(by=by, at=_utcnow(), approved=False, note=note)
             self._event(run, 0, "approval", "rejected", {"by": by, "note": note})
             run.final_reply = None
             return self._finish(run, RunStatus.REJECTED)
 
     def _execute_refund(self, run: Run, step: int) -> None:
+        p = run.proposal
+        # Re-check against current data: another run may have refunded this order since the proposal.
+        if not run.facts.get("payment_unknown"):
+            order = with_our_refunds(self.repo.get_order(p.order_id), self.payments)
+            now_elig = evaluate_eligibility(order, p.reason, self.repo.policy, self.settings.now.date())
+            if not now_elig.eligible or p.amount > now_elig.eligible_amount:
+                self._event(run, step, "guardrail", "payout_recheck",
+                            {"eligible_now": now_elig.eligible, "eligible_amount": str(now_elig.eligible_amount)})
+                self._escalate(run, step, [f"order changed since the proposal: {now_elig.explanation}"])
+                return
+
         faults = parse_faults(run.faults)
         actions = build_action_tools(self.payments, faults, self.settings.tool_timeout_s, self.settings.tool_retries)
-        p = run.proposal
         call = ToolCall("action", "issue_refund",
                         {"order_id": p.order_id, "amount": str(p.amount), "idempotency_key": run.run_id})
         result = actions.call(call.name, call.input)
@@ -216,9 +229,16 @@ class Orchestrator:
             "error_message": result.error_message, "attempts": result.attempts}, result.duration_ms)
         if result.ok:
             run.refund_id = result.data["refund_id"]
+            run.facts.pop("payment_unknown", None)
             run.final_reply = p.customer_reply
             run.error = None
             self._finish(run, RunStatus.COMPLETED)
+        elif result.error_code == "TIMEOUT":
+            # The provider may still have paid. Retrying with the same idempotency key is safe and tells us.
+            run.facts["payment_unknown"] = True
+            run.error = ("Payment status unknown: the payment service timed out. Approve again to check; "
+                         "the same idempotency key prevents a second payout.")
+            self._finish(run, RunStatus.AWAITING_APPROVAL)
         else:
             run.error = (f"Refund was NOT sent: {result.error_code} - {result.error_message}. "
                          "No money moved. Approve again to retry.")

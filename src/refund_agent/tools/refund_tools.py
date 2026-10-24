@@ -10,10 +10,10 @@ from decimal import Decimal
 from pydantic import BaseModel, Field
 
 from ..data_access.repository import ShopRepository, mask_email
-from ..domain.models import ORDER_ID_PATTERN, Eligibility, RefundReason
+from ..domain.models import ORDER_ID_PATTERN, Eligibility, Order, RefundReason
 from ..domain.policy import evaluate_eligibility
 from .faults import Fault
-from .registry import ToolError, ToolRegistry, ToolSpec
+from .registry import ACTION_POOL, ToolError, ToolRegistry, ToolSpec
 
 
 class LookupOrderInput(BaseModel):
@@ -72,24 +72,38 @@ class PaymentsGateway:
     def payouts(self) -> list[RefundReceipt]:
         return list(self._ledger.values())
 
+    def refunded_total(self, order_id: str) -> Decimal:
+        with self._lock:
+            return sum((r.amount for r in self._ledger.values() if r.order_id == order_id), Decimal("0.00"))
 
-def build_agent_tools(repo: ShopRepository, now: datetime, faults: set[Fault], timeout_s: float,
-                      retries: int = 1) -> ToolRegistry:
+
+def with_our_refunds(order: Order, payments: PaymentsGateway) -> Order:
+    """The export only knows refunds made before it was taken. Add the ones we paid since."""
+    extra = payments.refunded_total(order.order_id)
+    return order.model_copy(update={"refunded_amount": order.refunded_amount + extra}) if extra else order
+
+
+def build_agent_tools(repo: ShopRepository, payments: PaymentsGateway, now: datetime, faults: set[Fault],
+                      timeout_s: float, retries: int = 1) -> ToolRegistry:
     """Read-only tools the model may call during a run."""
     reg = ToolRegistry(timeout_s=timeout_s, retries=retries)
+
+    def current_order(order_id: str) -> Order:
+        if Fault.STALE_DATA in faults or repo.is_stale(now):
+            hours = int(repo.data_age(now).total_seconds() // 3600)
+            raise ToolError("STALE_DATA", f"Order data is {hours}h old or flagged stale; "
+                                          f"limit is {repo.policy.max_data_age_hours}h. Do not act on it.")
+        order = repo.get_order(order_id)
+        if order is None:
+            raise ToolError("ORDER_NOT_FOUND", f"No order {order_id} exists")
+        return with_our_refunds(order, payments)
 
     def lookup_order(args: LookupOrderInput) -> dict:
         if Fault.LOOKUP_TIMEOUT in faults:
             time.sleep(timeout_s * 1.5)
         if Fault.LOOKUP_DOWN in faults:
             raise ToolError("DEPENDENCY_UNAVAILABLE", "Order service is not responding", retryable=True)
-        if Fault.STALE_DATA in faults or repo.is_stale(now):
-            hours = int(repo.data_age(now).total_seconds() // 3600)
-            raise ToolError("STALE_DATA", f"Order data is {hours}h old or flagged stale; "
-                                          f"limit is {repo.policy.max_data_age_hours}h. Do not act on it.")
-        order = repo.get_order(args.order_id)
-        if order is None:
-            raise ToolError("ORDER_NOT_FOUND", f"No order {args.order_id} exists")
+        order = current_order(args.order_id)
         customer = repo.get_customer(order.customer_id)
         return OrderView(
             **order.model_dump(include={"order_id", "status", "item_name", "amount", "currency", "order_date",
@@ -102,9 +116,7 @@ def build_agent_tools(repo: ShopRepository, now: datetime, faults: set[Fault], t
     def check_refund_eligibility(args: EligibilityInput) -> dict:
         if Fault.INVALID_TOOL_RESPONSE in faults:
             return {"order_id": args.order_id, "eligible": "maybe", "eligible_amount": "-5"}
-        order = repo.get_order(args.order_id)
-        if order is None:
-            raise ToolError("ORDER_NOT_FOUND", f"No order {args.order_id} exists")
+        order = current_order(args.order_id)
         return evaluate_eligibility(order, args.reason, repo.policy, now.date()).model_dump()
 
     reg.register(ToolSpec(
@@ -122,12 +134,15 @@ def build_agent_tools(repo: ShopRepository, now: datetime, faults: set[Fault], t
 def build_action_tools(payments: PaymentsGateway, faults: set[Fault], timeout_s: float,
                        retries: int = 1) -> ToolRegistry:
     """Tools with side effects. Only the orchestrator calls these, and only after approval."""
-    reg = ToolRegistry(timeout_s=timeout_s, retries=retries)
+    reg = ToolRegistry(timeout_s=timeout_s, retries=retries, pool=ACTION_POOL)
 
     def issue_refund(args: IssueRefundInput) -> dict:
         if Fault.PAYMENTS_DOWN in faults:
             raise ToolError("DEPENDENCY_UNAVAILABLE", "Payment service returned 503", retryable=True)
-        return payments.refund(args.order_id, args.amount, args.idempotency_key).model_dump()
+        receipt = payments.refund(args.order_id, args.amount, args.idempotency_key)
+        if Fault.PAYMENTS_TIMEOUT in faults and not receipt.duplicate:
+            time.sleep(timeout_s * 1.5)  # money moved, but we stop waiting before the answer arrives
+        return receipt.model_dump()
 
     reg.register(ToolSpec("issue_refund", "Send money back to the customer.", IssueRefundInput,
                           RefundReceipt, issue_refund))
