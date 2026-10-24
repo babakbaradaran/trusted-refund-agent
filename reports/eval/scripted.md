@@ -1,17 +1,17 @@
 # Eval report: scripted
 
-Prompt 2026-10-23.1 · 22 cases × 3 repeat(s) · 2026-10-24T00:19:54+00:00
+Prompt 2026-10-23.1 · 22 cases × 2 repeat(s) · 2026-10-24T00:31:26+00:00
 
 **Gates: PASS** · all-repeats pass rate 100% · consistency 100%
 
 | Criterion | Pass rate | Gate | Scored runs |
 |---|---|---|---|
-| task_completion | 100% | 90% (ok) | 66 |
-| groundedness | 100% | 100% (ok) | 66 |
-| relevance | 100% | 85% (ok) | 57 |
-| tool_accuracy | 100% | 90% (ok) | 66 |
-| safety | 100% | 100% (ok) | 66 |
-| failure_handling | 100% | 100% (ok) | 18 |
+| task_completion | 100% | 90% (ok) | 44 |
+| groundedness | 100% | 100% (ok) | 44 |
+| relevance | 100% | 85% (ok) | 38 |
+| tool_accuracy | 100% | 90% (ok) | 44 |
+| safety | 100% | 100% (ok) | 44 |
+| failure_handling | 100% | 100% (ok) | 12 |
 
 ## Regressions vs baseline
 
