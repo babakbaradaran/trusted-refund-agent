@@ -26,7 +26,7 @@ def start(client, message="Order 1002 arrived broken", **extra):
     return client.post("/api/runs", json={"customer_message": message, **extra}, headers=AGENT)
 
 
-# ---- success ---------------------------------------------------------------------------------
+# success
 
 def test_health(client):
     body = client.get("/api/health").json()
@@ -77,7 +77,7 @@ def test_request_id_header(client):
     assert client.get("/api/health", headers={"X-Request-ID": "abc"}).headers["X-Request-ID"] == "abc"
 
 
-# ---- validation ------------------------------------------------------------------------------
+# validation
 
 @pytest.mark.parametrize("payload", [
     {}, {"customer_message": ""}, {"customer_message": "   "}, {"customer_message": "x" * 2001},
@@ -108,7 +108,7 @@ def test_edited_reply_with_invented_amount_is_rejected(client):
     assert res.status_code == 422 and "not in any tool result" in res.json()["detail"]
 
 
-# ---- authorization ---------------------------------------------------------------------------
+# authorization
 
 @pytest.mark.parametrize("method,path", [
     ("get", "/api/runs"), ("post", "/api/runs"), ("get", "/api/runs/x"), ("get", "/api/orders/1001"),
@@ -140,7 +140,7 @@ def test_fault_injection_disabled_in_production_mode():
     assert start(client, faults=["stale_data"]).status_code == 400
 
 
-# ---- failure scenarios -----------------------------------------------------------------------
+# failure scenarios
 
 def test_unknown_run_is_404(client):
     assert client.get("/api/runs/run_nope", headers=AGENT).status_code == 404

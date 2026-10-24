@@ -44,7 +44,7 @@ class Orchestrator:
         self.settings = settings
         self.llm_factory = llm_factory
 
-    # ---- start a run -------------------------------------------------------------------------
+    # start a run
 
     def start(self, message: str, created_by: str, faults: list[str] | None = None) -> Run:
         now = _utcnow()
@@ -141,7 +141,7 @@ class Orchestrator:
             if result.error_code == "ORDER_NOT_FOUND":
                 run.facts["missing_orders"].append(str(call.input.get("order_id")))
 
-    # ---- the model's final answer -------------------------------------------------------------
+    # the model's final answer
 
     def _try_finish(self, run: Run, step: int, call: ToolCall) -> str | None:
         """Returns an error message for the model if the answer is malformed, else finishes the run."""
@@ -185,7 +185,7 @@ class Orchestrator:
         run.final_reply = HOLDING_REPLY
         self._finish(run, RunStatus.ESCALATED)
 
-    # ---- human approval point -----------------------------------------------------------------
+    # human approval point
 
     def approve(self, run_id: str, by: str, note: str = "", customer_reply: str | None = None) -> Run:
         with self.store.lock:
@@ -252,7 +252,7 @@ class Orchestrator:
                          "No money moved. Approve again to retry.")
             self._finish(run, RunStatus.AWAITING_APPROVAL)
 
-    # ---- helpers -----------------------------------------------------------------------------
+    # helpers
 
     def _finish(self, run: Run, status: RunStatus) -> Run:
         old = run.status

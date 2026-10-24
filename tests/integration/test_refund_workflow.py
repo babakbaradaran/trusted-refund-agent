@@ -65,7 +65,7 @@ def test_decisions_across_the_dataset(orch, message, status, decision):
     assert (run.status, run.proposal.decision) == (status, decision)
 
 
-# ---- injected failures -------------------------------------------------------------------------
+# injected failures
 
 def test_stale_data_escalates(orch, payments):
     run = orch.start("Order 1001 arrived broken", "agent", faults=["stale_data"])
@@ -120,7 +120,7 @@ def test_every_run_has_a_trace(orch):
     assert all(e.duration_ms is not None for e in run.events if e.kind in ("llm_call", "tool_call"))
 
 
-# ---- found in code review ----------------------------------------------------------------------
+# found in code review
 
 def test_same_order_cannot_be_refunded_twice_across_runs(orch, payments):
     first = orch.start("Order 1001 arrived broken", "agent")

@@ -82,7 +82,7 @@ def test_schema_is_closed_for_strict_tool_use():
     assert schema["input_schema"]["required"] == ["x"]
 
 
-# --- refund tools ---
+# refund tools
 
 def agent_tools(repo, faults=()):
     return build_agent_tools(repo, PaymentsGateway(), NOW, set(faults), timeout_s=0.2)
