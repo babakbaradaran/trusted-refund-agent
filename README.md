@@ -39,7 +39,7 @@ Demo API keys (set your own with `API_KEYS`):
 Run the checks:
 
 ```bash
-pytest                                        # everything (231 tests, ~25 s)
+pytest                                        # everything (236 tests, ~35 s)
 pytest tests/unit tests/data tests/integration tests/api
 pytest tests/browser                          # Playwright, saves screenshots to reports/screenshots
 python -m evals.run_eval --model scripted --repeats 3     # AI eval, writes reports/eval/
@@ -154,7 +154,7 @@ and silent failures, so those get the most tests.
 
 | Layer | Count | What it proves | Where |
 |---|---|---|---|
-| Unit | 112 | Policy table, tool registry (validation, timeout, retry, crash), guardrails, agent loop with fake models, Claude adapter with a fake client | `tests/unit` |
+| Unit | 117 | Policy table and property-based policy rules (Hypothesis), tool registry (validation, timeout, retry, crash), guardrails, agent loop with fake models, Claude adapter with a fake client | `tests/unit` |
 | Data | 39 | Raw CSV values are parsed and cleaned correctly; the 5 bad rows are quarantined with a reason; every source row is accounted for; API output matches the source and never leaks a full email | `tests/data` |
 | Integration | 31 | Real tools + store + scripted model: approval flow, reload from store, double approve, edited reply, second refund for the same order, payment timeouts, simultaneous approvals, and every injected failure | `tests/integration` |
 | API | 38 | Success paths, input validation (422), missing/unknown key (401), wrong role (403), 404, 409, outages, clean 500 with request ID | `tests/api` |
@@ -295,5 +295,5 @@ Quality:
 - Grow the eval set from real (anonymised) tickets, and track scores over time on a dashboard.
 - Calibrate the judge model against human labels before trusting it more.
 - Contract tests against the real payments and orders APIs; load test the approval endpoint.
-- Property-based tests for the policy rules (for example, "eligible amount never exceeds balance").
+
 - An LLM-based classifier alongside the keyword guardrail, evaluated on a red-team set.
