@@ -4,9 +4,10 @@ from __future__ import annotations
 import json
 import time
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Any, Callable
+from typing import Any
 
 from pydantic import ValidationError
 

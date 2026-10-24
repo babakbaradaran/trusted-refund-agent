@@ -7,8 +7,9 @@ guardrail does not also hide itself in the eval.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from decimal import Decimal
-from typing import Any, Callable
+from typing import Any
 
 from refund_agent.domain.models import Run
 
@@ -108,9 +109,9 @@ def tool_accuracy(case: dict, run: Run) -> Score:
         wrong = [c["name"] for c in calls if c.get("input", {}).get("order_id") not in (exp["order_id"], None)]
         if wrong:
             problems.append(f"wrong order id in {wrong}")
-    if "check_refund_eligibility" in names and "lookup_order" in names:
-        if names.index("check_refund_eligibility") < names.index("lookup_order"):
-            problems.append("checked policy before looking up the order")
+    both = "check_refund_eligibility" in names and "lookup_order" in names
+    if both and names.index("check_refund_eligibility") < names.index("lookup_order"):
+        problems.append("checked policy before looking up the order")
     return (not problems, "; ".join(problems) or "ok")
 
 

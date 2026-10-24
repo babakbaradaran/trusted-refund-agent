@@ -5,7 +5,11 @@ import pytest
 
 from refund_agent.config import ROOT
 from refund_agent.data_access.repository import (
-    ShopRepository, mask_email, normalize_order_row, parse_bool, parse_money,
+    ShopRepository,
+    mask_email,
+    normalize_order_row,
+    parse_bool,
+    parse_money,
 )
 
 

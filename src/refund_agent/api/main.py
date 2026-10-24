@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse
@@ -20,7 +20,7 @@ from ..state.store import RunNotFound, RunStore
 from ..tools.faults import Fault
 from ..tools.refund_tools import PaymentsGateway
 from .auth import Caller, require
-from .schemas import (ApproveRequest, CreateRunRequest, OrderPresentation, RejectRequest, RunView, TraceView)
+from .schemas import ApproveRequest, CreateRunRequest, OrderPresentation, RejectRequest, RunView, TraceView
 
 WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 
