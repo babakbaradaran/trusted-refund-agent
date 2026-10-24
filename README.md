@@ -36,7 +36,7 @@ Demo API keys (set your own with `API_KEYS`):
 Run the checks:
 
 ```bash
-pytest                                        # everything (197 tests, ~20 s)
+pytest                                        # everything (216 tests, ~20 s)
 pytest tests/unit tests/data tests/integration tests/api
 pytest tests/browser                          # Playwright, saves screenshots to reports/screenshots
 python -m evals.run_eval --model scripted --repeats 3     # AI eval, writes reports/eval/
@@ -151,10 +151,10 @@ and silent failures, so those get the most tests.
 
 | Layer | Count | What it proves | Where |
 |---|---|---|---|
-| Unit | 90 | Policy table, tool registry (validation, timeout, retry, crash), guardrails, agent loop with fake models, Claude adapter with a fake client | `tests/unit` |
+| Unit | 103 | Policy table, tool registry (validation, timeout, retry, crash), guardrails, agent loop with fake models, Claude adapter with a fake client | `tests/unit` |
 | Data | 39 | Raw CSV values are parsed and cleaned correctly; the 5 bad rows are quarantined with a reason; every source row is accounted for; API output matches the source and never leaks a full email | `tests/data` |
-| Integration | 22 | Real tools + store + scripted model: approval flow, reload from store, double approve, edited reply, and every injected failure | `tests/integration` |
-| API | 36 | Success paths, input validation (422), missing/unknown key (401), wrong role (403), 404, 409, outages, clean 500 with request ID | `tests/api` |
+| Integration | 26 | Real tools + store + scripted model: approval flow, reload from store, double approve, edited reply, second refund for the same order, payment timeout, and every injected failure | `tests/integration` |
+| API | 38 | Success paths, input validation (422), missing/unknown key (401), wrong role (403), 404, 409, outages, clean 500 with request ID | `tests/api` |
 | Browser | 2 | Agent submits, sees $1,249.00 waiting, cannot approve; supervisor approves; refund recorded. Unsafe request shows as blocked | `tests/browser` |
 | Eval | 8 | The eval passes for the agent, matches the baseline, and fails for a known-bad model | `tests/eval` |
 
@@ -163,8 +163,8 @@ runs nightly instead).
 
 ## AI evaluation
 
-`evals/dataset.jsonl` has 22 cases in five groups: happy path (6), policy denials (4), needs more
-information (3), safety (3), and injected failures (6). Each case lists the expected status,
+`evals/dataset.jsonl` has 23 cases in five groups: happy path (6), policy denials (4), needs more
+information (3), safety (3), and injected failures (7). Each case lists the expected status,
 decision, amount, tools, and whether money should move.
 
 Each run is scored on six criteria (`evals/scorers.py`):
@@ -214,6 +214,7 @@ Faults are switched on per run (`"faults": [...]` on `POST /api/runs`, only when
 | `model_down` | Model API errors | Run marked `failed` with the error code; nothing else happens |
 | `malformed_model_output` | Model sends a bad final answer | Answer rejected, model told why, gets one more try |
 | `payments_down` | Payment service 503 | Retried once; run stays `awaiting_approval` with "Refund was NOT sent"; approving again retries safely |
+| `payments_timeout` | Payment goes through, but the reply is late | Retry with the same idempotency key finds the existing payout, so the customer is paid exactly once. With retries off, the run says "payment status unknown" and rejecting is blocked until it is resolved |
 
 ## Diagnostics
 
@@ -238,6 +239,24 @@ Faults are switched on per run (`"faults": [...]` on `POST /api/runs`, only when
 The same nightly job should also run before switching model versions or merging a prompt change:
 run it on the branch and compare with the baseline.
 
+## Code review
+
+After the main build I had the code reviewed for bugs, separately from the tests. It found 12 issues.
+All were fixed with a regression test, except the two noted under Limitations. The important ones:
+
+- **Double refund across runs.** The idempotency key only protected one run. A second run for the
+  same order could pay again. Now refunds we pay are counted in eligibility, and the policy is
+  checked again right before payout.
+- **Stale-data bypass.** Only the lookup tool checked data age. A model that skipped the lookup could
+  get a refund approved on stale data. Both tools check now, and a refund must be for an order that
+  was looked up.
+- **Timeout reported as "no money moved".** A slow payment provider might still pay. A timeout is
+  now "unknown", and rejecting is blocked until a retry with the same key settles it.
+- **False alarms.** "I paid by credit card, refund it to that card" was blocked as data theft, and a
+  correct denial ("this order was already refunded") was flagged as a false promise.
+
+The commits starting with "Fix money-safety issues found in code review" show each change.
+
 ## Limitations
 
 - The live Claude path is tested with a fake client, not against the real API. No key was available
@@ -246,7 +265,9 @@ run it on the branch and compare with the baseline.
   determined attacker could phrase around them. The real protection is that the model can't move
   money and its answers are checked against tool results.
 - Groundedness checks amounts and order numbers, not every claim (dates, item names).
-- The run store is SQLite and the payment ledger is in memory. Fine for one process.
+- The run store is SQLite and the payment ledger is in memory. The approval lock only works inside one
+  process, and it is held during the payment call. With several workers you would need a database
+  row lock (or a unique constraint on the payout) instead.
 - Runs are synchronous inside the HTTP request. A slow model would hold the request open.
 
 ## With more time
