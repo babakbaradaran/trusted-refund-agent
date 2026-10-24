@@ -161,6 +161,9 @@ and silent failures, so those get the most tests.
 | Browser | 3 | Agent submits, sees $1,249.00 waiting, cannot approve; supervisor approves; refund recorded. Unsafe request shows as blocked. Payment outage shows "Refund was NOT sent" and no money moves | `tests/browser` |
 | Eval | 8 | The eval passes for the agent, matches the baseline, and fails for a known-bad model | `tests/eval` |
 
+A saved run of the whole suite is in `reports/tests/` (`full-run.txt`, plus `junit.xml` with every test by name).
+CI uploads the same files on every run.
+
 Things I chose not to test: CSS layout, and the live Claude API in PR checks (cost, flakiness; it
 runs nightly instead).
 

@@ -1,0 +1,25 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\apps\trusted-refund-agent
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.15.1, hypothesis-6.170.9, playwright-0.10.0
+collected 236 items
+
+tests\api\test_api.py ......................................             [ 16%]
+tests\browser\test_refund_desk.py ...                                    [ 17%]
+tests\data\test_order_data.py ..........................                 [ 28%]
+tests\data\test_presentation.py .............                            [ 33%]
+tests\eval\test_eval_harness.py ........                                 [ 37%]
+tests\integration\test_refund_workflow.py .............................. [ 50%]
+.                                                                        [ 50%]
+tests\unit\test_claude_llm.py .............                              [ 55%]
+tests\unit\test_guardrails.py ..................................         [ 70%]
+tests\unit\test_orchestrator.py .............                            [ 75%]
+tests\unit\test_policy.py ................                               [ 82%]
+tests\unit\test_policy_properties.py .....                               [ 84%]
+tests\unit\test_scripted_llm.py ............                             [ 89%]
+tests\unit\test_tools.py ........................                        [100%]
+
+-- generated xml file: C:\apps\trusted-refund-agent\reports\tests\junit.xml ---
+============================ 236 passed in 39.28s =============================
