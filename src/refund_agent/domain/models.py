@@ -92,6 +92,7 @@ class Decision(StrEnum):
     REFUND = "refund"
     DENY = "deny"
     ESCALATE = "escalate"
+    NEEDS_INFO = "needs_info"
 
 
 class Proposal(BaseModel):
