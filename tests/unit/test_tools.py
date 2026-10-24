@@ -136,18 +136,18 @@ def test_eligibility_rejects_unknown_reason(repo):
     assert result.error_code == "INVALID_ARGUMENTS"
 
 
-def test_issue_refund_is_idempotent():
+def test_issue_refund_is_idempotent(repo):
     gw = PaymentsGateway()
-    tools = build_action_tools(gw, set(), timeout_s=0.2)
+    tools = build_action_tools(gw, repo, set(), timeout_s=0.2)
     args = {"order_id": "1002", "amount": "1249.00", "idempotency_key": "run_abc123"}
     first, second = tools.call("issue_refund", args), tools.call("issue_refund", args)
     assert first.data["refund_id"] == second.data["refund_id"] and second.data["duplicate"] is True
     assert len(gw.payouts) == 1 and gw.payouts[0].amount == Decimal("1249.00")
 
 
-def test_payments_down_moves_no_money():
+def test_payments_down_moves_no_money(repo):
     gw = PaymentsGateway()
-    result = build_action_tools(gw, {Fault.PAYMENTS_DOWN}, timeout_s=0.2).call(
+    result = build_action_tools(gw, repo, {Fault.PAYMENTS_DOWN}, timeout_s=0.2).call(
         "issue_refund", {"order_id": "1002", "amount": "10.00", "idempotency_key": "run_abc123"})
     assert result.error_code == "DEPENDENCY_UNAVAILABLE" and result.attempts == 2 and gw.payouts == []
 
@@ -160,7 +160,29 @@ def test_eligibility_tool_also_refuses_stale_data(repo):
 
 def test_eligibility_counts_refunds_we_already_paid(repo):
     gw = PaymentsGateway()
-    gw.refund("1008", Decimal("100.00"), "run_earlier1")
+    gw.refund("1008", Decimal("100.00"), "run_earlier1", limit=Decimal("399.99"))
     tools = build_agent_tools(repo, gw, NOW, set(), timeout_s=0.2)
     data = tools.call("check_refund_eligibility", {"order_id": "1008", "reason": "wrong_item"}).data
     assert data["eligible_amount"] == "299.99"  # 499.99 - 100 in the export - 100 paid by us
+
+
+def test_payment_service_refuses_to_go_over_the_order_balance(repo):
+    gw = PaymentsGateway()
+    tools = build_action_tools(gw, repo, set(), timeout_s=0.2)
+    ok = tools.call("issue_refund", {"order_id": "1008", "amount": "300.00", "idempotency_key": "run_first01"})
+    over = tools.call("issue_refund", {"order_id": "1008", "amount": "100.00", "idempotency_key": "run_second1"})
+    assert ok.ok and over.error_code == "OVER_REFUND" and not over.retryable
+    assert gw.refunded_total("1008") == Decimal("300.00")  # 399.99 was the most allowed
+
+
+def test_registry_remembers_an_earlier_timeout():
+    calls = []
+
+    def slow_then_down(a):
+        calls.append(1)
+        if len(calls) == 1:
+            time.sleep(0.3)
+        raise ToolError("DEPENDENCY_UNAVAILABLE", "503", retryable=True)
+
+    result = make_registry(slow_then_down, timeout=0.05).call("t", {"x": 1})
+    assert result.error_code == "DEPENDENCY_UNAVAILABLE" and result.any_timeout is True

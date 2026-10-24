@@ -198,3 +198,77 @@ def test_two_runs_for_one_order_approved_at_once_pay_once(orch, payments):
     results = _race(orch.approve, [(a.run_id, "sup-a"), (b.run_id, "sup-b")])
     assert sorted(map(str, results)) == ["completed", "escalated"]
     assert len(payments.payouts) == 1
+
+
+# found in the second review
+
+def _orch(repo, payments, retries):
+    from refund_agent.agent.orchestrator import Orchestrator
+    from refund_agent.config import Settings
+    from refund_agent.state.store import RunStore
+    return Orchestrator(repo, RunStore(), payments, Settings(tool_timeout_s=0.2, tool_retries=retries), ScriptedLLM)
+
+
+def test_timeout_then_other_run_pays_then_retry_is_refused(repo, payments, monkeypatch):
+    """Run A's payment times out without reaching the provider; run B pays; A's retry must not pay too."""
+    orch = _orch(repo, payments, retries=0)
+    a = orch.start("Order 1002 is broken", "agent")
+    b = orch.start("Order 1002 is broken", "agent")
+
+    real_refund = payments.refund
+
+    def lost_request(*args, **kwargs):  # provider never receives A's first request
+        import time
+        time.sleep(0.5)
+        raise RuntimeError("connection reset")
+
+    monkeypatch.setattr(payments, "refund", lost_request)
+    assert orch.approve(a.run_id, by="sup").facts["payment_unknown"] is True
+    monkeypatch.setattr(payments, "refund", real_refund)
+
+    assert orch.approve(b.run_id, by="sup").status == RunStatus.COMPLETED
+    retry = orch.approve(a.run_id, by="sup")
+    assert retry.status == RunStatus.ESCALATED and "payment service refused" in retry.error
+    assert len(payments.payouts) == 1
+
+
+def test_timeout_followed_by_503_is_still_unknown(repo, payments, monkeypatch):
+    orch = _orch(repo, payments, retries=1)
+    run = orch.start("Order 1002 is broken", "agent")
+    real_refund, calls = payments.refund, []
+
+    def paid_late_then_503(*args, **kwargs):
+        import time
+        calls.append(1)
+        if len(calls) == 1:
+            receipt = real_refund(*args, **kwargs)  # money moves...
+            time.sleep(0.5)                          # ...but the answer is too late
+            return receipt
+        from refund_agent.tools.registry import ToolError
+        raise ToolError("DEPENDENCY_UNAVAILABLE", "503", retryable=True)
+
+    monkeypatch.setattr(payments, "refund", paid_late_then_503)
+    out = orch.approve(run.run_id, by="sup")
+    assert out.status == RunStatus.AWAITING_APPROVAL and "status unknown" in out.error
+    with pytest.raises(InvalidTransition):
+        orch.reject(run.run_id, by="sup", note="no")
+    monkeypatch.setattr(payments, "refund", real_refund)
+    done = orch.approve(run.run_id, by="sup")
+    assert done.status == RunStatus.COMPLETED and len(payments.payouts) == 1
+
+
+def test_auto_approved_refunds_racing_for_one_order_pay_once(repo, payments):
+    import threading
+    orch = _orch(repo, payments, retries=1)
+    barrier = threading.Barrier(4)
+
+    def go():
+        barrier.wait()
+        orch.start("Order 1001 arrived broken", "agent")  # $42, auto-approved
+
+    threads = [threading.Thread(target=go) for _ in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert len(payments.payouts) == 1

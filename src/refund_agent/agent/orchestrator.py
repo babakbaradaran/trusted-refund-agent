@@ -71,6 +71,8 @@ class Orchestrator:
             self._event(run, len(run.events), "error", "crash", {"type": type(exc).__name__})
             run.error = (f"Internal error during the run ({type(exc).__name__}). "
                          "Check the steps before retrying.")
+            if run.refund_id:
+                run.error += f" Refund {run.refund_id} WAS paid; do not pay again."
             run.final_reply = HOLDING_REPLY
             self._finish(run, RunStatus.FAILED)
         return run
@@ -218,8 +220,14 @@ class Orchestrator:
     def _execute_refund(self, run: Run, step: int) -> None:
         p = run.proposal
         # Re-check against current data: another run may have refunded this order since the proposal.
+        # (Skipped while a payment is unknown: this run's own payout may already be in the totals.
+        # The payment service's per-order limit is the hard stop in every case.)
         if not run.facts.get("payment_unknown"):
-            order = with_our_refunds(self.repo.get_order(p.order_id), self.payments)
+            order = self.repo.get_order(p.order_id)
+            if order is None or p.reason is None:
+                self._escalate(run, step, ["order or refund reason missing at payout"])
+                return
+            order = with_our_refunds(order, self.payments)
             now_elig = evaluate_eligibility(order, p.reason, self.repo.policy, self.settings.now.date())
             if not now_elig.eligible or p.amount > now_elig.eligible_amount:
                 self._event(run, step, "guardrail", "payout_recheck",
@@ -228,7 +236,8 @@ class Orchestrator:
                 return
 
         faults = parse_faults(run.faults)
-        actions = build_action_tools(self.payments, faults, self.settings.tool_timeout_s, self.settings.tool_retries)
+        actions = build_action_tools(self.payments, self.repo, faults, self.settings.tool_timeout_s,
+                                     self.settings.tool_retries)
         call = ToolCall("action", "issue_refund",
                         {"order_id": p.order_id, "amount": str(p.amount), "idempotency_key": run.run_id})
         result = actions.call(call.name, call.input)
@@ -241,8 +250,12 @@ class Orchestrator:
             run.final_reply = p.customer_reply
             run.error = None
             self._finish(run, RunStatus.COMPLETED)
-        elif result.error_code == "TIMEOUT":
-            # The provider may still have paid. Retrying with the same idempotency key is safe and tells us.
+        elif result.error_code == "OVER_REFUND":
+            run.facts.pop("payment_unknown", None)
+            self._escalate(run, step, [f"payment service refused: {result.error_message}"])
+        elif result.any_timeout:
+            # An attempt timed out, so the provider may have paid even if a later attempt failed differently.
+            # Retrying with the same idempotency key is safe and tells us.
             run.facts["payment_unknown"] = True
             run.error = ("Payment status unknown: the payment service timed out. Approve again to check; "
                          "the same idempotency key prevents a second payout.")

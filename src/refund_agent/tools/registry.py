@@ -31,6 +31,7 @@ class ToolResult:
     retryable: bool = False
     attempts: int = 1
     duration_ms: float = 0.0
+    any_timeout: bool = False  # an earlier attempt timed out, so its side effect may have happened
 
     def for_model(self) -> dict[str, Any]:
         if self.ok:
@@ -81,21 +82,25 @@ class ToolRegistry:
             return self._fail(name, start, ToolError("INVALID_ARGUMENTS", _brief(exc)))
 
         attempts = 0
+        timed_out = False
         while True:
             attempts += 1
             try:
                 raw = self._run_with_timeout(spec, parsed)
                 data = spec.output_model.model_validate(raw).model_dump(mode="json")
-                return ToolResult(name, True, data=data, attempts=attempts, duration_ms=_ms(start))
+                return ToolResult(name, True, data=data, attempts=attempts, duration_ms=_ms(start),
+                                  any_timeout=timed_out)
             except ValidationError as exc:
                 err = ToolError("INVALID_TOOL_RESPONSE", f"Tool returned data in the wrong shape: {_brief(exc)}")
             except ToolError as exc:
                 err = exc
             except Exception as exc:  # a bug or crash inside the tool
                 err = ToolError("TOOL_CRASHED", f"{type(exc).__name__}: {exc}")
+            timed_out = timed_out or err.code == "TIMEOUT"
             if not (err.retryable and attempts <= self.retries):
                 result = self._fail(name, start, err)
                 result.attempts = attempts
+                result.any_timeout = timed_out
                 return result
 
     def _run_with_timeout(self, spec: ToolSpec, parsed: BaseModel) -> Any:

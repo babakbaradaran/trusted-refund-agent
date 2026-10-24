@@ -60,10 +60,19 @@ class PaymentsGateway:
         self._ledger: dict[str, RefundReceipt] = {}
         self._lock = threading.Lock()
 
-    def refund(self, order_id: str, amount: Decimal, key: str) -> RefundReceipt:
+    def refund(self, order_id: str, amount: Decimal, key: str, limit: Decimal) -> RefundReceipt:
+        """Pay once per key, and never more than `limit` in total for the order.
+
+        The check and the payout happen under one lock, so no timing of runs, retries or
+        approvals can over-refund an order.
+        """
         with self._lock:
             if key in self._ledger:
                 return self._ledger[key].model_copy(update={"duplicate": True})
+            already = self._total(order_id)
+            if already + amount > limit:
+                raise ToolError("OVER_REFUND", f"Order {order_id} has {limit - already} left to refund; "
+                                               f"refusing {amount}")
             receipt = RefundReceipt(refund_id=f"rf_{uuid.uuid4().hex[:12]}", order_id=order_id, amount=amount)
             self._ledger[key] = receipt
             return receipt
@@ -74,7 +83,10 @@ class PaymentsGateway:
 
     def refunded_total(self, order_id: str) -> Decimal:
         with self._lock:
-            return sum((r.amount for r in self._ledger.values() if r.order_id == order_id), Decimal("0.00"))
+            return self._total(order_id)
+
+    def _total(self, order_id: str) -> Decimal:
+        return sum((r.amount for r in self._ledger.values() if r.order_id == order_id), Decimal("0.00"))
 
 
 def with_our_refunds(order: Order, payments: PaymentsGateway) -> Order:
@@ -131,7 +143,7 @@ def build_agent_tools(repo: ShopRepository, payments: PaymentsGateway, now: date
     return reg
 
 
-def build_action_tools(payments: PaymentsGateway, faults: set[Fault], timeout_s: float,
+def build_action_tools(payments: PaymentsGateway, repo: ShopRepository, faults: set[Fault], timeout_s: float,
                        retries: int = 1) -> ToolRegistry:
     """Tools with side effects. Only the orchestrator calls these, and only after approval."""
     reg = ToolRegistry(timeout_s=timeout_s, retries=retries, pool=ACTION_POOL)
@@ -139,7 +151,10 @@ def build_action_tools(payments: PaymentsGateway, faults: set[Fault], timeout_s:
     def issue_refund(args: IssueRefundInput) -> dict:
         if Fault.PAYMENTS_DOWN in faults:
             raise ToolError("DEPENDENCY_UNAVAILABLE", "Payment service returned 503", retryable=True)
-        receipt = payments.refund(args.order_id, args.amount, args.idempotency_key)
+        order = repo.get_order(args.order_id)
+        if order is None:
+            raise ToolError("ORDER_NOT_FOUND", f"No order {args.order_id} exists")
+        receipt = payments.refund(args.order_id, args.amount, args.idempotency_key, limit=order.refundable_balance)
         if Fault.PAYMENTS_TIMEOUT in faults and not receipt.duplicate:
             time.sleep(timeout_s * 1.5)  # money moved, but we stop waiting before the answer arrives
         return receipt.model_dump()
