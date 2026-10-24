@@ -9,7 +9,6 @@ from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from ..agent.claude_llm import ClaudeLLM
 from ..agent.llm import LLM
 from ..agent.orchestrator import InvalidTransition, Orchestrator
 from ..agent.scripted_llm import ScriptedLLM
@@ -28,6 +27,8 @@ WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 
 def default_llm_factory(settings: Settings) -> Callable[[], LLM]:
     if settings.llm_provider == "claude":
+        from ..agent.claude_llm import ClaudeLLM  # SDK loads only when Claude is used
+
         return lambda: ClaudeLLM(model=settings.claude_model)
     return ScriptedLLM
 

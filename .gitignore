@@ -8,3 +8,4 @@ reports/screenshots/*.png
 reports/junit/
 !reports/screenshots/.gitkeep
 .env
+backups/
