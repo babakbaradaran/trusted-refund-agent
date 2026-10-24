@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, unit, data, integration, API
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check src tests evals
+      - run: >
+          pytest tests/unit tests/data tests/integration tests/api
+          --junitxml=reports/junit/checks.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: junit-checks
+          path: reports/junit/
+
+  eval:
+    name: AI eval (scripted model, gates + baseline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: pytest tests/eval --junitxml=reports/junit/eval.xml
+      - run: python -m evals.run_eval --model scripted --repeats 2 --out reports/eval-ci
+      - run: cat reports/eval-ci/scripted.md >> "$GITHUB_STEP_SUMMARY"
+        if: always()
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-report
+          path: reports/eval-ci/
+
+  browser:
+    name: Browser test (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: python -m playwright install --with-deps chromium
+      - run: pytest tests/browser --tracing=retain-on-failure --output=reports/playwright
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-evidence
+          path: |
+            reports/screenshots/
+            reports/playwright/

@@ -1,0 +1,25 @@
+name: Post-deploy smoke test
+
+# Run after each deployment (manually here; a deploy pipeline would call it).
+# Uses only safe calls: health, one read, one run that cannot move money, and an auth check.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Deployed app URL
+        required: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install httpx
+      - run: python scripts/smoke_test.py "${{ inputs.base_url }}"
+        env:
+          SMOKE_AGENT_KEY: ${{ secrets.SMOKE_AGENT_KEY }}

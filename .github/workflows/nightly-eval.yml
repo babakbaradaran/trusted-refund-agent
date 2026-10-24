@@ -1,0 +1,43 @@
+name: Nightly eval
+
+# Runs the eval against the real model several times to catch model or prompt drift.
+# Without the ANTHROPIC_API_KEY secret it falls back to the scripted model so the job still runs.
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      repeats:
+        description: Repeats per case
+        default: "3"
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - name: Run eval
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            python -m evals.run_eval --model claude --repeats "${{ inputs.repeats || 3 }}" --judge --out reports/eval-nightly
+          else
+            echo "No ANTHROPIC_API_KEY secret; running scripted model only." >> "$GITHUB_STEP_SUMMARY"
+            python -m evals.run_eval --model scripted --repeats 3 --out reports/eval-nightly
+          fi
+      - run: cat reports/eval-nightly/*.md >> "$GITHUB_STEP_SUMMARY"
+        if: always()
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nightly-eval
+          path: reports/eval-nightly/
+          retention-days: 30
