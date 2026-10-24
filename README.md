@@ -39,7 +39,7 @@ Demo API keys (set your own with `API_KEYS`):
 Run the checks:
 
 ```bash
-pytest                                        # everything (217 tests, ~20 s)
+pytest                                        # everything (231 tests, ~25 s)
 pytest tests/unit tests/data tests/integration tests/api
 pytest tests/browser                          # Playwright, saves screenshots to reports/screenshots
 python -m evals.run_eval --model scripted --repeats 3     # AI eval, writes reports/eval/
@@ -154,9 +154,9 @@ and silent failures, so those get the most tests.
 
 | Layer | Count | What it proves | Where |
 |---|---|---|---|
-| Unit | 103 | Policy table, tool registry (validation, timeout, retry, crash), guardrails, agent loop with fake models, Claude adapter with a fake client | `tests/unit` |
+| Unit | 112 | Policy table, tool registry (validation, timeout, retry, crash), guardrails, agent loop with fake models, Claude adapter with a fake client | `tests/unit` |
 | Data | 39 | Raw CSV values are parsed and cleaned correctly; the 5 bad rows are quarantined with a reason; every source row is accounted for; API output matches the source and never leaks a full email | `tests/data` |
-| Integration | 26 | Real tools + store + scripted model: approval flow, reload from store, double approve, edited reply, second refund for the same order, payment timeout, and every injected failure | `tests/integration` |
+| Integration | 31 | Real tools + store + scripted model: approval flow, reload from store, double approve, edited reply, second refund for the same order, payment timeouts, simultaneous approvals, and every injected failure | `tests/integration` |
 | API | 38 | Success paths, input validation (422), missing/unknown key (401), wrong role (403), 404, 409, outages, clean 500 with request ID | `tests/api` |
 | Browser | 3 | Agent submits, sees $1,249.00 waiting, cannot approve; supervisor approves; refund recorded. Unsafe request shows as blocked. Payment outage shows "Refund was NOT sent" and no money moves | `tests/browser` |
 | Eval | 8 | The eval passes for the agent, matches the baseline, and fails for a known-bad model | `tests/eval` |
@@ -260,6 +260,13 @@ All were fixed with a regression test, except the two noted under Limitations. T
 
 The commits starting with "Fix money-safety issues found in code review" show each change.
 
+A second review checked those fixes and found that two timing cases could still pay twice (a payment
+timeout followed by another run for the same order, and two automatic refunds at the same moment).
+The root cause was that "how much is left to refund?" and "pay" were two steps. The payment call now
+checks the order's remaining balance itself, under the same lock as the payout, so no timing can
+over-refund an order. Tests reproduce each case ("Enforce per-order refund limit inside the payment
+call").
+
 ## Limitations
 
 - The live Claude path is tested with a fake client, not against the real API. No key was available
@@ -267,7 +274,10 @@ The commits starting with "Fix money-safety issues found in code review" show ea
 - Guardrail patterns for prompt injection are keyword-based. They catch the obvious cases; a
   determined attacker could phrase around them. The real protection is that the model can't move
   money and its answers are checked against tool results.
-- Groundedness checks amounts and order numbers, not every claim (dates, item names).
+- Groundedness checks amounts and order numbers, not every claim (dates, item names). Amounts written
+  in words ("fifty dollars") or other currencies are not checked.
+- The agent doesn't verify that the person writing owns the order. The support agent is trusted to
+  paste a real customer's message; a customer-facing version would need a logged-in identity.
 - The run store is SQLite and the payment ledger is in memory. The approval lock only works inside one
   process, and it is held during the payment call. With several workers you would need a database
   row lock (or a unique constraint on the payout) instead.
