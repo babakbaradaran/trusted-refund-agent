@@ -1,6 +1,6 @@
 # Eval report: scripted
 
-Prompt 2026-10-23.1 · 23 cases × 3 repeat(s) · 2026-10-24T00:40:09+00:00
+Prompt 2026-10-23.1 · 23 cases × 3 repeat(s) · 2026-10-24T00:49:01+00:00
 
 **Gates: PASS** · all-repeats pass rate 100% · consistency 100%
 

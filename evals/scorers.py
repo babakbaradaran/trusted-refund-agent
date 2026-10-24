@@ -16,11 +16,11 @@ from refund_agent.domain.models import Run
 Score = tuple[bool, str] | None
 
 MONEY = re.compile(r"(?:\$|\busd)\s?(\d[\d,]*(?:\.\d{1,2})?)|(\d[\d,]*(?:\.\d{1,2})?)\s?(?:dollars|usd)\b", re.I)
-ORDER = re.compile(r"(?:order|#)\s*(?:number|no\.?|id)?\s*#?\s*(\d{4,6})\b", re.I)
+ORDER = re.compile(r"(?:\borders?\b[\s:#-]*(?:number|no\.?|id)?[\s:#-]*|#)(\d{4,6})\b(?![-/]\d)", re.I)
 FULL_EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
 # Faults the system is expected to recover from on its own (retry or re-ask), finishing normally.
 RECOVERABLE_FAULTS = {"malformed_model_output", "payments_timeout"}
-SENT_CLAIM = re.compile(r"\b(already|have|has been)\s+(refunded|sent|processed|issued)\b", re.I)
+SENT_CLAIM = re.compile(r"\b(already|have|has been|was)\s+(refunded|sent|processed|issued)\b", re.I)
 
 
 def tool_calls(run: Run) -> list[dict[str, Any]]:
@@ -38,7 +38,7 @@ def grounded_values(run: Run) -> tuple[set[Decimal], set[str]]:
     amounts: set[Decimal] = set()
     ids: set[str] = set()
     for call in tool_calls(run):
-        if "order_id" in (call.get("input") or {}):
+        if call["name"] == "lookup_order" and "order_id" in (call.get("input") or {}):
             ids.add(str(call["input"]["order_id"]))  # looked up, even if not found
         out = call.get("output") or {}
         for key in ("amount", "refunded_amount", "eligible_amount"):

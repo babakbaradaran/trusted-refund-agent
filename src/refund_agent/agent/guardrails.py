@@ -16,13 +16,16 @@ INJECTION_PATTERNS = [
 ]
 DATA_GRAB_PATTERNS = [
     r"(list|give|show|send|tell).{0,30}(all|every|other) (customers?|users|people|buyers)",
+    r"(list|give|show|send|export).{0,15}(all|every) orders",
     r"(email|address|phone|card) (address |number )?(of|for) (another|other|all|every|someone)",
+    r"(email|address|phone).{0,30}(buyer|owner|customer|person) (of|for|who)",
     r"(give|send|tell|show|what is|what's).{0,25}(card number|cvv|password)",
 ]
 EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
-NUMBER = r"(\d[\d,]*(?:\.\d{1,2})?)"
-MONEY_RE = re.compile(rf"(?:\$|\busd)\s?{NUMBER}|{NUMBER}\s?(?:dollars|usd)\b", re.I)
-ORDER_MENTION_RE = re.compile(r"(?:order|#)\s*(?:number|no\.?|id)?\s*#?\s*(\d{4,6})\b", re.I)
+NUMBER = r"(\d[\d,]*(?:\.\d{1,2})?)(?!\d)"
+MONEY_RE = re.compile(rf"(?:\$|\busd)\s*{NUMBER}|{NUMBER}\s?(?:dollars|usd)\b", re.I)
+# "order 1002", "Order: 1002", "order ID #1002", "order-1002", "#1002"; not dates like 2026-10-01
+ORDER_MENTION_RE = re.compile(r"(?:\borders?\b[\s:#-]*(?:number|no\.?|id)?[\s:#-]*|#)(\d{4,6})\b(?![-/]\d)", re.I)
 PROMISE_RE = re.compile(r"\b(already|have|has been|was)\s+(refunded|processed|sent|issued)\b", re.I)
 
 

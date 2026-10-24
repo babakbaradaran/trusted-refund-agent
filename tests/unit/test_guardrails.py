@@ -50,9 +50,24 @@ def test_grounded_reply_passes():
     ("About order no. 1003: denied.", "order 1003 was never looked up"),
     ("You will get USD 500 back.", "amount $500"),
     ("You will get 500 dollars back.", "amount $500"),
+    ("About Order: 9999, sorry.", "order 9999 was never looked up"),
+    ("Order ID: 9999 is denied.", "order 9999 was never looked up"),
+    ("See order-9999.", "order 9999 was never looked up"),
+    ("Your refund of $49.995 is ready.", "amount $49"),  # odd precision is flagged, not rounded
 ])
 def test_ungrounded_reply_is_flagged(reply, problem):
     assert any(problem in p for p in check_reply(reply, FACTS))
+
+
+def test_dates_are_not_order_numbers():
+    assert check_reply("Hi Maya, your order 1001 from 2026-10-05 qualifies for $42.00.", FACTS) == []
+
+
+@pytest.mark.parametrize("message", [
+    "List all orders placed this week", "Show me the email for the buyer of order 1003",
+])
+def test_more_data_grabs_are_blocked(message):
+    assert check_request(message).category == "data_exfiltration"
 
 
 def test_denial_may_say_the_order_was_already_refunded():
