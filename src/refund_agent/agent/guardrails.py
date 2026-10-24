@@ -15,13 +15,14 @@ INJECTION_PATTERNS = [
     r"(approve|issue|send).{0,40}refund.{0,40}(without|no) (approval|checks?|review)",
 ]
 DATA_GRAB_PATTERNS = [
-    r"(list|give|show|send).{0,30}(all|every|other) (customers?|orders|users)",
-    r"(email|address|phone|card) (address |number )?(of|for) (another|other|all|every)",
-    r"credit card|card number|cvv|password",
+    r"(list|give|show|send|tell).{0,30}(all|every|other) (customers?|users|people|buyers)",
+    r"(email|address|phone|card) (address |number )?(of|for) (another|other|all|every|someone)",
+    r"(give|send|tell|show|what is|what's).{0,25}(card number|cvv|password)",
 ]
 EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
-MONEY_RE = re.compile(r"\$\s?(\d[\d,]*(?:\.\d{1,2})?)")
-ORDER_MENTION_RE = re.compile(r"(?:order|#)\s*#?\s*(\d{4,6})\b", re.I)
+NUMBER = r"(\d[\d,]*(?:\.\d{1,2})?)"
+MONEY_RE = re.compile(rf"(?:\$|\busd)\s?{NUMBER}|{NUMBER}\s?(?:dollars|usd)\b", re.I)
+ORDER_MENTION_RE = re.compile(r"(?:order|#)\s*(?:number|no\.?|id)?\s*#?\s*(\d{4,6})\b", re.I)
 PROMISE_RE = re.compile(r"\b(already|have|has been|was)\s+(refunded|processed|sent|issued)\b", re.I)
 
 
@@ -51,13 +52,21 @@ def known_amounts(facts: dict[str, Any]) -> set[Decimal]:
     return amounts
 
 
-def check_reply(reply: str, facts: dict[str, Any]) -> list[str]:
-    """Return problems with the customer reply. Empty list means it is safe to send."""
+def money_mentions(text: str) -> list[str]:
+    return [a or b for a, b in MONEY_RE.findall(text)]
+
+
+def check_reply(reply: str, facts: dict[str, Any], may_mention_past_refund: bool = False) -> list[str]:
+    """Return problems with the customer reply. Empty list means it is safe to send.
+
+    `may_mention_past_refund` is for denials ("this order was already refunded") and for replies
+    a supervisor approves, which are sent only after the payment succeeds.
+    """
     problems = []
     if any("*" not in e for e in EMAIL_RE.findall(reply)):
         problems.append("reply contains an email address")
     amounts = known_amounts(facts)
-    for raw in MONEY_RE.findall(reply):
+    for raw in money_mentions(reply):
         try:
             value = Decimal(raw.replace(",", ""))
         except InvalidOperation:
@@ -68,7 +77,7 @@ def check_reply(reply: str, facts: dict[str, Any]) -> list[str]:
     for oid in ORDER_MENTION_RE.findall(reply):
         if oid not in seen_orders:
             problems.append(f"order {oid} was never looked up")
-    if PROMISE_RE.search(reply):
+    if not may_mention_past_refund and PROMISE_RE.search(reply):
         problems.append("reply claims money was already sent")
     return problems
 
@@ -85,7 +94,7 @@ class Verdict:
 
 def check_proposal(p: Proposal, facts: dict[str, Any]) -> Verdict:
     """The model proposes; this decides whether the proposal is backed by tool results."""
-    problems = check_reply(p.customer_reply, facts)
+    problems = check_reply(p.customer_reply, facts, may_mention_past_refund=p.decision == Decision.DENY)
     errors = {e["code"] for e in facts.get("errors", [])}
 
     if "STALE_DATA" in errors and p.decision != Decision.ESCALATE:

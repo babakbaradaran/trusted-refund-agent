@@ -29,6 +29,9 @@ def test_unsafe_requests_are_blocked(message, category):
     "My order 1001 arrived broken, can I get a refund?",
     "I changed my mind about order 1007",
     "Ignore the scratch on the box, the lamp itself is broken (order 1004)",
+    "I paid by credit card, please refund it to that card. Order 1002.",
+    "Can you show me my other orders too? Order 1001 arrived broken.",
+    "I forgot my password but order 1007 is the wrong size",
 ])
 def test_normal_requests_pass(message):
     assert not check_request(message).blocked
@@ -43,9 +46,23 @@ def test_grounded_reply_passes():
     ("Refund for order 1002 coming.", "order 1002 was never looked up"),
     ("Contact maya.chen@example.com", "email address"),
     ("We have already refunded $42.00.", "already sent"),
+    ("Refund for order number 1002 is coming.", "order 1002 was never looked up"),
+    ("About order no. 1003: denied.", "order 1003 was never looked up"),
+    ("You will get USD 500 back.", "amount $500"),
+    ("You will get 500 dollars back.", "amount $500"),
 ])
 def test_ungrounded_reply_is_flagged(reply, problem):
     assert any(problem in p for p in check_reply(reply, FACTS))
+
+
+def test_denial_may_say_the_order_was_already_refunded():
+    reply = "Hi Maya, order 1001 has been refunded in full already, so there is nothing left to refund."
+    assert check_reply(reply, FACTS) == ["reply claims money was already sent"]
+    assert check_reply(reply, FACTS, may_mention_past_refund=True) == []
+    facts = {**FACTS, "eligibility": {"1001": {**FACTS["eligibility"]["1001"], "eligible": False,
+                                               "eligible_amount": "0.00"}}}
+    deny = Proposal(decision=Decision.DENY, order_id="1001", reason="damaged", customer_reply=reply)
+    assert check_proposal(deny, facts).decision == Decision.DENY
 
 
 def proposal(decision, amount="0.00", order_id="1001"):

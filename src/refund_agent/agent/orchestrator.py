@@ -185,7 +185,7 @@ class Orchestrator:
             if run.status != RunStatus.AWAITING_APPROVAL:
                 raise InvalidTransition(f"Run is {run.status.value}; only awaiting_approval runs can be approved")
             if customer_reply is not None:
-                problems = check_reply(customer_reply, run.facts)
+                problems = check_reply(customer_reply, run.facts, may_mention_past_refund=True)
                 if problems:
                     raise ValueError("Edited reply failed checks: " + "; ".join(problems))
                 run.proposal = run.proposal.model_copy(update={"customer_reply": customer_reply})
