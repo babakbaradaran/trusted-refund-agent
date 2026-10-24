@@ -86,9 +86,9 @@ $("new-run").addEventListener("submit", async (ev) => {
   showError($("form-error"), null);
   $("submit").disabled = true;
   try {
-    const run = await api("/api/runs", {
-      method: "POST", body: JSON.stringify({ customer_message: $("message").value }),
-    });
+    const payload = { customer_message: $("message").value };
+    if ($("fault").value) payload.faults = [$("fault").value];
+    const run = await api("/api/runs", { method: "POST", body: JSON.stringify(payload) });
     await showRun(run.run_id);
     await loadRuns();
   } catch (err) {
@@ -121,4 +121,5 @@ $("approve").onclick = () => decide("approve");
 $("reject").onclick = () => decide("reject");
 $("role").onchange = () => { loadRuns(); if (current) showRun(current.run_id); };
 document.querySelectorAll("[data-sample]").forEach((b) => { b.onclick = () => { $("message").value = b.dataset.sample; }; });
+fetch("/api/health").then((r) => r.json()).then((h) => { $("fault-box").hidden = !h.fault_injection; }).catch(() => {});
 loadRuns();

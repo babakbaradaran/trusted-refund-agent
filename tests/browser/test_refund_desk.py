@@ -20,7 +20,7 @@ def server():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
-    app = create_app(Settings())
+    app = create_app(Settings(allow_fault_injection=True, tool_timeout_s=0.3))  # a test server
     srv = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning"))
     thread = threading.Thread(target=srv.run, daemon=True)
     thread.start()
@@ -76,3 +76,21 @@ def test_unsafe_request_is_blocked_in_the_ui(page: Page, server):
     expect(page.get_by_test_id("status")).to_have_text("blocked")
     expect(page.get_by_test_id("run-error")).to_contain_text("prompt_injection")
     shot(page, "3-blocked")
+
+
+def test_payment_outage_is_visible_to_the_supervisor(page: Page, server):
+    base_url, app = server
+    before = len(app.state.payments.payouts)
+    page.goto(base_url)
+    page.get_by_test_id("role-select").select_option(label="Supervisor")
+    page.get_by_test_id("message").fill("Order 1005 never arrived.")
+    page.get_by_test_id("fault").select_option("payments_down")
+    page.get_by_test_id("submit").click()
+    expect(page.get_by_test_id("status")).to_have_text("awaiting approval")
+
+    page.get_by_test_id("approve").click()
+    expect(page.get_by_test_id("run-error")).to_contain_text("Refund was NOT sent")
+    expect(page.get_by_test_id("status")).to_have_text("awaiting approval")
+    expect(page.get_by_test_id("trace")).to_contain_text("issue_refund")
+    shot(page, "4-payment-outage")
+    assert len(app.state.payments.payouts) == before

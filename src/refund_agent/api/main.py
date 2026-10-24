@@ -69,7 +69,8 @@ def create_app(settings: Settings | None = None, llm_factory: Callable[[], LLM] 
     def health():
         return {"status": "ok", "llm_provider": settings.llm_provider,
                 "data_exported_at": repo.exported_at, "data_stale": repo.is_stale(settings.now),
-                "data_quality_issues": len(repo.issues), "orders_loaded": len(repo.orders)}
+                "data_quality_issues": len(repo.issues), "orders_loaded": len(repo.orders),
+                "fault_injection": settings.allow_fault_injection}
 
     @app.post("/api/runs", status_code=status.HTTP_201_CREATED, response_model=RunView)
     def create_run(body: CreateRunRequest, caller: Caller = Depends(require("agent"))):
