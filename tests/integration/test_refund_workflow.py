@@ -13,7 +13,7 @@ def test_large_refund_pauses_for_approval_then_pays(orch, payments):
 
     done = orch.approve(run.run_id, by="supervisor", note="photos checked")
     assert done.status == RunStatus.COMPLETED and done.refund_id.startswith("rf_")
-    assert "$1249.00" in done.final_reply and len(payments.payouts) == 1
+    assert "$1,249.00" in done.final_reply and len(payments.payouts) == 1
 
 
 def test_state_survives_reload_from_store(orch):

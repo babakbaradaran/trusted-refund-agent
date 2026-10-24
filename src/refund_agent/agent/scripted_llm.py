@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+from decimal import Decimal
 from typing import Any
 
 from .llm import ModelTurn, ToolCall, tool_use_block
@@ -95,7 +96,8 @@ class ScriptedLLM:
             amount = elig["eligible_amount"]
             return _submit("refund", order_id, amount, reason,
                            f"Hi {name}, I'm sorry about your {order['item_name']}. You qualify for a refund "
-                           f"of ${amount} for order {order_id}. We'll confirm as soon as it is processed.",
+                           f"of ${Decimal(amount):,.2f} for order {order_id}. We'll confirm as soon as it "
+                           "is processed.",
                            f"Eligible under rule {elig['rule']}.")
         return _submit("deny", order_id, "0.00", reason,
                        f"Hi {name}, thank you for contacting us about order {order_id}. I'm sorry, but we "

@@ -10,12 +10,12 @@ body { margin: 0; }
 .layout { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.4fr); gap: 16px; padding: 16px 20px; }
 @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; min-width: 0; }
-h2 { font-size: 1rem; margin: 0 0 10px; } h3 { font-size: .9rem; margin: 0 0 8px; }
+h2 { font-size: 1rem; margin: 0 0 10px; } form + h2 { margin-top: 20px; } h3 { font-size: .9rem; margin: 0 0 8px; }
 label { display: block; font-size: .85rem; color: var(--muted); margin: 6px 0 4px; }
 textarea, input, select { width: 100%; box-sizing: border-box; font: inherit; padding: 8px;
   border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--fg); }
 .role select { width: auto; }
-button { font: inherit; border-radius: 6px; padding: 8px 14px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+button { box-sizing: border-box; font: inherit; border-radius: 6px; padding: 8px 14px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
 button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 button:disabled { opacity: .5; cursor: not-allowed; }
 .primary { background: var(--accent); border-color: var(--accent); color: #fff; margin-top: 10px; }
