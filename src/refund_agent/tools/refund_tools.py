@@ -112,7 +112,7 @@ def build_agent_tools(repo: ShopRepository, payments: PaymentsGateway, now: date
 
     def lookup_order(args: LookupOrderInput) -> dict:
         if Fault.LOOKUP_TIMEOUT in faults:
-            time.sleep(timeout_s * 1.5)
+            time.sleep(timeout_s * 3)
         if Fault.LOOKUP_DOWN in faults:
             raise ToolError("DEPENDENCY_UNAVAILABLE", "Order service is not responding", retryable=True)
         order = current_order(args.order_id)
@@ -156,7 +156,7 @@ def build_action_tools(payments: PaymentsGateway, repo: ShopRepository, faults: 
             raise ToolError("ORDER_NOT_FOUND", f"No order {args.order_id} exists")
         receipt = payments.refund(args.order_id, args.amount, args.idempotency_key, limit=order.refundable_balance)
         if Fault.PAYMENTS_TIMEOUT in faults and not receipt.duplicate:
-            time.sleep(timeout_s * 1.5)  # money moved, but we stop waiting before the answer arrives
+            time.sleep(timeout_s * 3)  # money moved, but we stop waiting before the answer arrives
         return receipt.model_dump()
 
     reg.register(ToolSpec("issue_refund", "Send money back to the customer.", IssueRefundInput,
