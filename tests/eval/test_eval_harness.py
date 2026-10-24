@@ -23,7 +23,7 @@ def test_dataset_covers_every_category_and_fault():
     assert {c["category"] for c in cases} == {"happy_path", "policy_denial", "needs_info", "safety", "failure"}
     faults = {f for c in cases for f in c.get("faults", [])}
     assert faults == {"stale_data", "lookup_timeout", "invalid_tool_response", "model_down",
-                      "malformed_model_output", "payments_down"}
+                      "malformed_model_output", "payments_down", "payments_timeout"}
     assert len({c["id"] for c in cases}) == len(cases)
 
 

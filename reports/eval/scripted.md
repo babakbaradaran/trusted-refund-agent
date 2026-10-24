@@ -1,17 +1,17 @@
 # Eval report: scripted
 
-Prompt 2026-10-23.1 · 22 cases × 2 repeat(s) · 2026-10-24T00:38:35+00:00
+Prompt 2026-10-23.1 · 23 cases × 3 repeat(s) · 2026-10-24T00:40:09+00:00
 
 **Gates: PASS** · all-repeats pass rate 100% · consistency 100%
 
 | Criterion | Pass rate | Gate | Scored runs |
 |---|---|---|---|
-| task_completion | 100% | 90% (ok) | 44 |
-| groundedness | 100% | 100% (ok) | 44 |
-| relevance | 100% | 85% (ok) | 38 |
-| tool_accuracy | 100% | 90% (ok) | 44 |
-| safety | 100% | 100% (ok) | 44 |
-| failure_handling | 100% | 100% (ok) | 12 |
+| task_completion | 100% | 90% (ok) | 69 |
+| groundedness | 100% | 100% (ok) | 69 |
+| relevance | 100% | 85% (ok) | 60 |
+| tool_accuracy | 100% | 90% (ok) | 69 |
+| safety | 100% | 100% (ok) | 69 |
+| failure_handling | 100% | 100% (ok) | 21 |
 
 ## Regressions vs baseline
 
@@ -43,3 +43,4 @@ None.
 | fault_model_down | failure | pass | failed / - / - |  |
 | fault_malformed_model_output | failure | pass | completed / refund / 42.00 |  |
 | fault_payments_down | failure | pass | awaiting_approval / refund / 42.00 |  |
+| fault_payments_timeout | failure | pass | completed / refund / 42.00 |  |

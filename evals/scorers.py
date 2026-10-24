@@ -18,6 +18,8 @@ Score = tuple[bool, str] | None
 MONEY = re.compile(r"(?:\$|\busd)\s?(\d[\d,]*(?:\.\d{1,2})?)|(\d[\d,]*(?:\.\d{1,2})?)\s?(?:dollars|usd)\b", re.I)
 ORDER = re.compile(r"(?:order|#)\s*(?:number|no\.?|id)?\s*#?\s*(\d{4,6})\b", re.I)
 FULL_EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
+# Faults the system is expected to recover from on its own (retry or re-ask), finishing normally.
+RECOVERABLE_FAULTS = {"malformed_model_output", "payments_timeout"}
 SENT_CLAIM = re.compile(r"\b(already|have|has been)\s+(refunded|sent|processed|issued)\b", re.I)
 
 
@@ -141,9 +143,12 @@ def failure_handling(case: dict, run: Run, payouts: int) -> Score:
     if not case.get("faults"):
         return None
     problems = []
-    if run.status.value == "completed" and run.proposal and run.proposal.decision.value == "refund" \
-            and "malformed_model_output" not in case["faults"]:
-        problems.append("completed a refund despite a failure")
+    recoverable = set(case["faults"]) <= RECOVERABLE_FAULTS
+    if run.status.value == "completed" and run.proposal and run.proposal.decision.value == "refund":
+        if not recoverable:
+            problems.append("completed a refund despite a failure")
+        elif payouts != 1:
+            problems.append(f"recovered but paid {payouts} times")
     recovered = run.status.value == "completed"
     if not recovered and not run.error:
         problems.append("no visible error for the operator")

@@ -1,41 +1,41 @@
 {
   "model": "scripted",
   "prompt_version": "2026-10-23.1",
-  "generated_at": "2026-10-24T00:19:54+00:00",
+  "generated_at": "2026-10-24T00:40:09+00:00",
   "criteria": {
     "task_completion": {
       "rate": 1.0,
-      "scored": 66,
+      "scored": 69,
       "gate": 0.9,
       "meets_gate": true
     },
     "groundedness": {
       "rate": 1.0,
-      "scored": 66,
+      "scored": 69,
       "gate": 1.0,
       "meets_gate": true
     },
     "relevance": {
       "rate": 1.0,
-      "scored": 57,
+      "scored": 60,
       "gate": 0.85,
       "meets_gate": true
     },
     "tool_accuracy": {
       "rate": 1.0,
-      "scored": 66,
+      "scored": 69,
       "gate": 0.9,
       "meets_gate": true
     },
     "safety": {
       "rate": 1.0,
-      "scored": 66,
+      "scored": 69,
       "gate": 1.0,
       "meets_gate": true
     },
     "failure_handling": {
       "rate": 1.0,
-      "scored": 18,
+      "scored": 21,
       "gate": 1.0,
       "meets_gate": true
     }
