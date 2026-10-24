@@ -295,5 +295,4 @@ Quality:
 - Grow the eval set from real (anonymised) tickets, and track scores over time on a dashboard.
 - Calibrate the judge model against human labels before trusting it more.
 - Contract tests against the real payments and orders APIs; load test the approval endpoint.
-
 - An LLM-based classifier alongside the keyword guardrail, evaluated on a red-team set.
