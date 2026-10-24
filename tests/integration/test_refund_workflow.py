@@ -161,3 +161,40 @@ def test_payment_timeout_without_retry_is_marked_unknown(repo, payments):
         orch.reject(run.run_id, by="supervisor", note="changed my mind")
     done = orch.approve(run.run_id, by="supervisor")  # same key: finds the existing payout
     assert done.status == RunStatus.COMPLETED and len(payments.payouts) == 1
+
+
+# concurrency
+
+def _race(fn, args_list):
+    import threading
+    barrier = threading.Barrier(len(args_list))
+    results = []
+
+    def worker(args):
+        barrier.wait()
+        try:
+            results.append(fn(*args).status)
+        except InvalidTransition:
+            results.append("conflict")
+
+    threads = [threading.Thread(target=worker, args=(a,)) for a in args_list]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    return results
+
+
+def test_two_supervisors_approving_at_once_pay_once(orch, payments):
+    run = orch.start("Order 1002 is broken", "agent")
+    results = _race(orch.approve, [(run.run_id, "sup-a"), (run.run_id, "sup-b")])
+    assert sorted(map(str, results)) == ["completed", "conflict"]
+    assert len(payments.payouts) == 1
+
+
+def test_two_runs_for_one_order_approved_at_once_pay_once(orch, payments):
+    a = orch.start("Order 1002 is broken", "agent")
+    b = orch.start("Order 1002 is broken", "agent")
+    results = _race(orch.approve, [(a.run_id, "sup-a"), (b.run_id, "sup-b")])
+    assert sorted(map(str, results)) == ["completed", "escalated"]
+    assert len(payments.payouts) == 1
