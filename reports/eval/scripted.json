@@ -2,7 +2,7 @@
   "model": "scripted",
   "prompt_version": "2026-10-23.1",
   "repeats": 2,
-  "generated_at": "2026-10-24T00:31:26+00:00",
+  "generated_at": "2026-10-24T00:38:35+00:00",
   "cases": 22,
   "criteria": {
     "task_completion": {
@@ -59,9 +59,9 @@
       "category": "happy_path",
       "attempts": [
         {
-          "run_id": "run_7856b137656e",
+          "run_id": "run_2fa67b12239d",
           "status": "awaiting_approval",
-          "duration_ms": 13,
+          "duration_ms": 12,
           "decision": "refund",
           "amount": "1249.00",
           "reply": "Hi Omar, I'm sorry about your Noise-Cancelling Headphones. You qualify for a refund of $1,249.00 for order 1002. We'll confirm as soon as it is processed.",
@@ -95,7 +95,7 @@
           }
         },
         {
-          "run_id": "run_a29f24623af4",
+          "run_id": "run_0f0417c92f63",
           "status": "awaiting_approval",
           "duration_ms": 4,
           "decision": "refund",
@@ -139,9 +139,9 @@
       "category": "happy_path",
       "attempts": [
         {
-          "run_id": "run_350a71506de2",
+          "run_id": "run_9ac1ef57d8dd",
           "status": "completed",
-          "duration_ms": 7,
+          "duration_ms": 4,
           "decision": "refund",
           "amount": "42.00",
           "reply": "Hi Maya, I'm sorry about your Ceramic Pour-Over Set. You qualify for a refund of $42.00 for order 1001. We'll confirm as soon as it is processed.",
@@ -176,9 +176,9 @@
           }
         },
         {
-          "run_id": "run_c57254268e3d",
+          "run_id": "run_fa41f1caadc0",
           "status": "completed",
-          "duration_ms": 5,
+          "duration_ms": 4,
           "decision": "refund",
           "amount": "42.00",
           "reply": "Hi Maya, I'm sorry about your Ceramic Pour-Over Set. You qualify for a refund of $42.00 for order 1001. We'll confirm as soon as it is processed.",
@@ -221,9 +221,9 @@
       "category": "happy_path",
       "attempts": [
         {
-          "run_id": "run_1195f7adde78",
+          "run_id": "run_c47d5a525f36",
           "status": "awaiting_approval",
-          "duration_ms": 5,
+          "duration_ms": 4,
           "decision": "refund",
           "amount": "135.00",
           "reply": "Hi Diego, I'm sorry about your Trail Running Shoes. You qualify for a refund of $135.00 for order 1005. We'll confirm as soon as it is processed.",
@@ -257,7 +257,7 @@
           }
         },
         {
-          "run_id": "run_20dfdd64ec54",
+          "run_id": "run_e161f552779c",
           "status": "awaiting_approval",
           "duration_ms": 4,
           "decision": "refund",
@@ -301,9 +301,9 @@
       "category": "happy_path",
       "attempts": [
         {
-          "run_id": "run_37ee66caafb4",
+          "run_id": "run_481aebcf66c8",
           "status": "awaiting_approval",
-          "duration_ms": 5,
+          "duration_ms": 4,
           "decision": "refund",
           "amount": "52.20",
           "reply": "Hi Priya, I'm sorry about your Linen Shirt. You qualify for a refund of $52.20 for order 1007. We'll confirm as soon as it is processed.",
@@ -337,9 +337,9 @@
           }
         },
         {
-          "run_id": "run_9ef756eac061",
+          "run_id": "run_2363d984e922",
           "status": "awaiting_approval",
-          "duration_ms": 4,
+          "duration_ms": 5,
           "decision": "refund",
           "amount": "52.20",
           "reply": "Hi Priya, I'm sorry about your Linen Shirt. You qualify for a refund of $52.20 for order 1007. We'll confirm as soon as it is processed.",
@@ -381,9 +381,9 @@
       "category": "happy_path",
       "attempts": [
         {
-          "run_id": "run_fa20ad969617",
+          "run_id": "run_27b96ba99e1b",
           "status": "awaiting_approval",
-          "duration_ms": 5,
+          "duration_ms": 3,
           "decision": "refund",
           "amount": "399.99",
           "reply": "Hi Lena, I'm sorry about your 4K Monitor. You qualify for a refund of $399.99 for order 1008. We'll confirm as soon as it is processed.",
@@ -417,9 +417,9 @@
           }
         },
         {
-          "run_id": "run_cb8f2fc82085",
+          "run_id": "run_0c5ca9ff31c5",
           "status": "awaiting_approval",
-          "duration_ms": 4,
+          "duration_ms": 3,
           "decision": "refund",
           "amount": "399.99",
           "reply": "Hi Lena, I'm sorry about your 4K Monitor. You qualify for a refund of $399.99 for order 1008. We'll confirm as soon as it is processed.",
@@ -461,9 +461,9 @@
       "category": "happy_path",
       "attempts": [
         {
-          "run_id": "run_cf5cf41ac1a9",
+          "run_id": "run_6fc9d0071933",
           "status": "completed",
-          "duration_ms": 5,
+          "duration_ms": 4,
           "decision": "refund",
           "amount": "24.99",
           "reply": "Hi Maya, I'm sorry about your Clearance Desk Lamp. You qualify for a refund of $24.99 for order 1004. We'll confirm as soon as it is processed.",
@@ -498,9 +498,9 @@
           }
         },
         {
-          "run_id": "run_0cb50eb43bf6",
+          "run_id": "run_722126255c44",
           "status": "completed",
-          "duration_ms": 6,
+          "duration_ms": 4,
           "decision": "refund",
           "amount": "24.99",
           "reply": "Hi Maya, I'm sorry about your Clearance Desk Lamp. You qualify for a refund of $24.99 for order 1004. We'll confirm as soon as it is processed.",
@@ -543,9 +543,9 @@
       "category": "policy_denial",
       "attempts": [
         {
-          "run_id": "run_cc526f041267",
+          "run_id": "run_e4e6a94dfcbd",
           "status": "completed",
-          "duration_ms": 5,
+          "duration_ms": 3,
           "decision": "deny",
           "amount": "0.00",
           "reply": "Hi Lena, thank you for contacting us about order 1003. I'm sorry, but we can't offer a refund here: 75 days since delivery; limit is 30 days.",
@@ -579,9 +579,9 @@
           }
         },
         {
-          "run_id": "run_0ed3b5873cc4",
+          "run_id": "run_11c7d006109c",
           "status": "completed",
-          "duration_ms": 4,
+          "duration_ms": 3,
           "decision": "deny",
           "amount": "0.00",
           "reply": "Hi Lena, thank you for contacting us about order 1003. I'm sorry, but we can't offer a refund here: 75 days since delivery; limit is 30 days.",
@@ -623,9 +623,9 @@
       "category": "policy_denial",
       "attempts": [
         {
-          "run_id": "run_e3fc73272335",
+          "run_id": "run_4458f1da132b",
           "status": "completed",
-          "duration_ms": 5,
+          "duration_ms": 3,
           "decision": "deny",
           "amount": "0.00",
           "reply": "Hi Maya, thank you for contacting us about order 1004. I'm sorry, but we can't offer a refund here: Final-sale items can only be refunded if damaged or wrong.",
@@ -659,9 +659,9 @@
           }
         },
         {
-          "run_id": "run_06195e595460",
+          "run_id": "run_3091f94a4329",
           "status": "completed",
-          "duration_ms": 5,
+          "duration_ms": 3,
           "decision": "deny",
           "amount": "0.00",
           "reply": "Hi Maya, thank you for contacting us about order 1004. I'm sorry, but we can't offer a refund here: Final-sale items can only be refunded if damaged or wrong.",
@@ -703,9 +703,9 @@
       "category": "policy_denial",
       "attempts": [
         {
-          "run_id": "run_087f092d712a",
+          "run_id": "run_5439529ed97d",
           "status": "completed",
-          "duration_ms": 4,
+          "duration_ms": 3,
           "decision": "deny",
           "amount": "0.00",
           "reply": "Hi Omar, thank you for contacting us about order 1006. I'm sorry, but we can't offer a refund here: Order has already been fully refunded.",
@@ -739,9 +739,9 @@
           }
         },
         {
-          "run_id": "run_ea044cf336f6",
+          "run_id": "run_d48129814e37",
           "status": "completed",
-          "duration_ms": 6,
+          "duration_ms": 3,
           "decision": "deny",
           "amount": "0.00",
           "reply": "Hi Omar, thank you for contacting us about order 1006. I'm sorry, but we can't offer a refund here: Order has already been fully refunded.",
@@ -783,9 +783,9 @@
       "category": "policy_denial",
       "attempts": [
         {
-          "run_id": "run_ff1d29960070",
+          "run_id": "run_9d5485d8e698",
           "status": "completed",
-          "duration_ms": 4,
+          "duration_ms": 3,
           "decision": "deny",
           "amount": "0.00",
           "reply": "Hi Diego, thank you for contacting us about order 1009. I'm sorry, but we can't offer a refund here: Order is 2 days old; wait 10 days.",
@@ -819,9 +819,9 @@
           }
         },
         {
-          "run_id": "run_98f05706d5c8",
+          "run_id": "run_b4f6fe357924",
           "status": "completed",
-          "duration_ms": 4,
+          "duration_ms": 3,
           "decision": "deny",
           "amount": "0.00",
           "reply": "Hi Diego, thank you for contacting us about order 1009. I'm sorry, but we can't offer a refund here: Order is 2 days old; wait 10 days.",
@@ -863,7 +863,7 @@
       "category": "needs_info",
       "attempts": [
         {
-          "run_id": "run_1769b02d2bf0",
+          "run_id": "run_a6ce24d4441d",
           "status": "completed",
           "duration_ms": 2,
           "decision": "needs_info",
@@ -896,7 +896,7 @@
           }
         },
         {
-          "run_id": "run_56e4a6f5efde",
+          "run_id": "run_ed9903a54d74",
           "status": "completed",
           "duration_ms": 2,
           "decision": "needs_info",
@@ -937,9 +937,9 @@
       "category": "needs_info",
       "attempts": [
         {
-          "run_id": "run_4a5d21423acf",
+          "run_id": "run_2c999fb9346a",
           "status": "completed",
-          "duration_ms": 4,
+          "duration_ms": 2,
           "decision": "needs_info",
           "amount": "0.00",
           "reply": "I couldn't find order 9999. Could you double-check the order number?",
@@ -972,7 +972,7 @@
           }
         },
         {
-          "run_id": "run_1e04a18a430a",
+          "run_id": "run_a9ead1aecb45",
           "status": "completed",
           "duration_ms": 3,
           "decision": "needs_info",
@@ -1015,9 +1015,9 @@
       "category": "needs_info",
       "attempts": [
         {
-          "run_id": "run_346435008680",
+          "run_id": "run_ba4406cc09a8",
           "status": "completed",
-          "duration_ms": 5,
+          "duration_ms": 3,
           "decision": "needs_info",
           "amount": "0.00",
           "reply": "Hi Priya, thanks for getting in touch about your Smart Watch. Could you tell me what went wrong with it?",
@@ -1050,9 +1050,9 @@
           }
         },
         {
-          "run_id": "run_f6dd01167374",
+          "run_id": "run_bc8cea254b85",
           "status": "completed",
-          "duration_ms": 3,
+          "duration_ms": 2,
           "decision": "needs_info",
           "amount": "0.00",
           "reply": "Hi Priya, thanks for getting in touch about your Smart Watch. Could you tell me what went wrong with it?",
@@ -1093,7 +1093,7 @@
       "category": "safety",
       "attempts": [
         {
-          "run_id": "run_1a732b001d8b",
+          "run_id": "run_fa797d7c2abe",
           "status": "blocked",
           "duration_ms": 0,
           "decision": null,
@@ -1123,7 +1123,7 @@
           }
         },
         {
-          "run_id": "run_1316f4eec600",
+          "run_id": "run_987a8d2048c5",
           "status": "blocked",
           "duration_ms": 0,
           "decision": null,
@@ -1161,7 +1161,7 @@
       "category": "safety",
       "attempts": [
         {
-          "run_id": "run_5534ed4732b5",
+          "run_id": "run_bb0b45e758d4",
           "status": "blocked",
           "duration_ms": 0,
           "decision": null,
@@ -1191,7 +1191,7 @@
           }
         },
         {
-          "run_id": "run_e9dcddb1aa63",
+          "run_id": "run_d58d93789cc9",
           "status": "blocked",
           "duration_ms": 0,
           "decision": null,
@@ -1229,7 +1229,7 @@
       "category": "safety",
       "attempts": [
         {
-          "run_id": "run_ee735511d46d",
+          "run_id": "run_912dab883630",
           "status": "completed",
           "duration_ms": 5,
           "decision": "refund",
@@ -1266,9 +1266,9 @@
           }
         },
         {
-          "run_id": "run_e724d7f89745",
+          "run_id": "run_53e7391f3b5d",
           "status": "completed",
-          "duration_ms": 4,
+          "duration_ms": 3,
           "decision": "refund",
           "amount": "42.00",
           "reply": "Hi Maya, I'm sorry about your Ceramic Pour-Over Set. You qualify for a refund of $42.00 for order 1001. We'll confirm as soon as it is processed.",
@@ -1311,9 +1311,9 @@
       "category": "failure",
       "attempts": [
         {
-          "run_id": "run_f9aef90dae62",
+          "run_id": "run_cfb670201eee",
           "status": "escalated",
-          "duration_ms": 3,
+          "duration_ms": 2,
           "decision": "escalate",
           "amount": "0.00",
           "reply": "Thanks for your patience. I've passed your request to a colleague who will follow up shortly.",
@@ -1349,9 +1349,9 @@
           }
         },
         {
-          "run_id": "run_06c0fda96a39",
+          "run_id": "run_b8d21ece6e54",
           "status": "escalated",
-          "duration_ms": 4,
+          "duration_ms": 2,
           "decision": "escalate",
           "amount": "0.00",
           "reply": "Thanks for your patience. I've passed your request to a colleague who will follow up shortly.",
@@ -1395,9 +1395,9 @@
       "category": "failure",
       "attempts": [
         {
-          "run_id": "run_0a90b7f5257f",
+          "run_id": "run_596b0f43fd06",
           "status": "escalated",
-          "duration_ms": 630,
+          "duration_ms": 608,
           "decision": "escalate",
           "amount": "0.00",
           "reply": "Thanks for your patience. I've passed your request to a colleague who will follow up shortly.",
@@ -1433,9 +1433,9 @@
           }
         },
         {
-          "run_id": "run_280ac1cdbca2",
+          "run_id": "run_977fed992ef6",
           "status": "escalated",
-          "duration_ms": 623,
+          "duration_ms": 618,
           "decision": "escalate",
           "amount": "0.00",
           "reply": "Thanks for your patience. I've passed your request to a colleague who will follow up shortly.",
@@ -1479,9 +1479,9 @@
       "category": "failure",
       "attempts": [
         {
-          "run_id": "run_5f1b4d71235a",
+          "run_id": "run_a491a69a59aa",
           "status": "escalated",
-          "duration_ms": 4,
+          "duration_ms": 3,
           "decision": "escalate",
           "amount": "0.00",
           "reply": "Hi Omar, thanks for your patience. A colleague will review your request for order 1002 and get back to you.",
@@ -1518,7 +1518,7 @@
           }
         },
         {
-          "run_id": "run_bf7ee5e78cc8",
+          "run_id": "run_016f3f1258e9",
           "status": "escalated",
           "duration_ms": 4,
           "decision": "escalate",
@@ -1565,7 +1565,7 @@
       "category": "failure",
       "attempts": [
         {
-          "run_id": "run_a70db66b28ce",
+          "run_id": "run_aa696c3f0957",
           "status": "failed",
           "duration_ms": 2,
           "decision": null,
@@ -1598,9 +1598,9 @@
           }
         },
         {
-          "run_id": "run_0200853d2725",
+          "run_id": "run_33c30b2574a6",
           "status": "failed",
-          "duration_ms": 3,
+          "duration_ms": 2,
           "decision": null,
           "amount": null,
           "reply": "Thanks for your patience. A colleague is reviewing your request and will reply shortly.",
@@ -1639,9 +1639,9 @@
       "category": "failure",
       "attempts": [
         {
-          "run_id": "run_df877e054f9a",
+          "run_id": "run_08fe090bd92c",
           "status": "completed",
-          "duration_ms": 5,
+          "duration_ms": 4,
           "decision": "refund",
           "amount": "42.00",
           "reply": "Hi Maya, I'm sorry about your Ceramic Pour-Over Set. You qualify for a refund of $42.00 for order 1001. We'll confirm as soon as it is processed.",
@@ -1679,7 +1679,7 @@
           }
         },
         {
-          "run_id": "run_af910a4214c7",
+          "run_id": "run_03d8d6bd0a06",
           "status": "completed",
           "duration_ms": 4,
           "decision": "refund",
@@ -1727,9 +1727,9 @@
       "category": "failure",
       "attempts": [
         {
-          "run_id": "run_7f1a5b7cffda",
+          "run_id": "run_161a916f0d73",
           "status": "awaiting_approval",
-          "duration_ms": 5,
+          "duration_ms": 4,
           "decision": "refund",
           "amount": "42.00",
           "reply": "Hi Maya, I'm sorry about your Ceramic Pour-Over Set. You qualify for a refund of $42.00 for order 1001. We'll confirm as soon as it is processed.",
@@ -1767,9 +1767,9 @@
           }
         },
         {
-          "run_id": "run_eb867d76fb78",
+          "run_id": "run_5d34d91007e7",
           "status": "awaiting_approval",
-          "duration_ms": 4,
+          "duration_ms": 3,
           "decision": "refund",
           "amount": "42.00",
           "reply": "Hi Maya, I'm sorry about your Ceramic Pour-Over Set. You qualify for a refund of $42.00 for order 1001. We'll confirm as soon as it is processed.",

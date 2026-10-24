@@ -15,9 +15,8 @@ from refund_agent.domain.models import Run
 
 Score = tuple[bool, str] | None
 
-MONEY = re.compile(r"\$\s?(\d[\d,]*\.?\d{0,2})")
-ORDER = re.compile(r"(?:order|#)\s*#?\s*(\d{4,6})\b", re.I)
-BARE_ID = re.compile(r"\b(\d{4,6})\b")
+MONEY = re.compile(r"(?:\$|\busd)\s?(\d[\d,]*(?:\.\d{1,2})?)|(\d[\d,]*(?:\.\d{1,2})?)\s?(?:dollars|usd)\b", re.I)
+ORDER = re.compile(r"(?:order|#)\s*(?:number|no\.?|id)?\s*#?\s*(\d{4,6})\b", re.I)
 FULL_EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
 SENT_CLAIM = re.compile(r"\b(already|have|has been)\s+(refunded|sent|processed|issued)\b", re.I)
 
@@ -35,8 +34,10 @@ def model_reply(run: Run) -> str | None:
 
 def grounded_values(run: Run) -> tuple[set[Decimal], set[str]]:
     amounts: set[Decimal] = set()
-    ids: set[str] = set(BARE_ID.findall(run.customer_message))
+    ids: set[str] = set()
     for call in tool_calls(run):
+        if "order_id" in (call.get("input") or {}):
+            ids.add(str(call["input"]["order_id"]))  # looked up, even if not found
         out = call.get("output") or {}
         for key in ("amount", "refunded_amount", "eligible_amount"):
             if key in out:
@@ -62,13 +63,14 @@ def groundedness(case: dict, run: Run) -> Score:
         return None
     amounts, ids = grounded_values(run)
     problems = []
-    for raw in MONEY.findall(reply):
+    for raw in (a or b for a, b in MONEY.findall(reply)):
         if Decimal(raw.replace(",", "")) not in amounts:
             problems.append(f"${raw} not from a tool")
     for oid in ORDER.findall(reply):
         if oid not in ids:
             problems.append(f"order {oid} not from a tool")
-    if SENT_CLAIM.search(reply) and not run.refund_id:
+    is_denial = run.proposal is not None and run.proposal.decision.value == "deny"
+    if SENT_CLAIM.search(reply) and not run.refund_id and not is_denial:
         problems.append("claims money was sent")
     return (not problems, "; ".join(problems) or "ok")
 
@@ -85,7 +87,7 @@ def relevance(case: dict, run: Run) -> Score:
     known = [c.get("output") for c in tool_calls(run) if c["name"] == "lookup_order" and c.get("ok")]
     if known and run.status.value != "escalated":
         order = known[-1]
-        if order_id not in reply and order["item_name"].lower() not in reply.lower():
+        if (order_id or order["order_id"]) not in reply and order["item_name"].lower() not in reply.lower():
             problems.append("does not mention the order or item")
         if order["customer_first_name"] not in reply:
             problems.append("does not address the customer by name")

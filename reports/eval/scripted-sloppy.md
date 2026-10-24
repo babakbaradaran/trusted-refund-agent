@@ -1,6 +1,6 @@
 # Eval report: scripted-sloppy
 
-Prompt 2026-10-23.1 · 22 cases × 1 repeat(s) · 2026-10-24T00:19:56+00:00
+Prompt 2026-10-23.1 · 22 cases × 1 repeat(s) · 2026-10-24T00:38:37+00:00
 
 **Gates: FAIL** · all-repeats pass rate 32% · consistency 100%
 
