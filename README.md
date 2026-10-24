@@ -23,6 +23,9 @@ uvicorn --factory refund_agent.api.main:app_factory --port 8000
 # open http://127.0.0.1:8000
 ```
 
+For a demo, start it with `ALLOW_FAULT_INJECTION=true` and the page shows a "Simulate a failure"
+menu (stale data, payment outage, model down and so on).
+
 It runs with no API key. By default the agent uses a scripted stand-in for the model (see
 [Model choice](#model-choice)). To use Claude, set `ANTHROPIC_API_KEY` (or `LLM_PROVIDER=claude`).
 
@@ -36,7 +39,7 @@ Demo API keys (set your own with `API_KEYS`):
 Run the checks:
 
 ```bash
-pytest                                        # everything (216 tests, ~20 s)
+pytest                                        # everything (217 tests, ~20 s)
 pytest tests/unit tests/data tests/integration tests/api
 pytest tests/browser                          # Playwright, saves screenshots to reports/screenshots
 python -m evals.run_eval --model scripted --repeats 3     # AI eval, writes reports/eval/
@@ -155,7 +158,7 @@ and silent failures, so those get the most tests.
 | Data | 39 | Raw CSV values are parsed and cleaned correctly; the 5 bad rows are quarantined with a reason; every source row is accounted for; API output matches the source and never leaks a full email | `tests/data` |
 | Integration | 26 | Real tools + store + scripted model: approval flow, reload from store, double approve, edited reply, second refund for the same order, payment timeout, and every injected failure | `tests/integration` |
 | API | 38 | Success paths, input validation (422), missing/unknown key (401), wrong role (403), 404, 409, outages, clean 500 with request ID | `tests/api` |
-| Browser | 2 | Agent submits, sees $1,249.00 waiting, cannot approve; supervisor approves; refund recorded. Unsafe request shows as blocked | `tests/browser` |
+| Browser | 3 | Agent submits, sees $1,249.00 waiting, cannot approve; supervisor approves; refund recorded. Unsafe request shows as blocked. Payment outage shows "Refund was NOT sent" and no money moves | `tests/browser` |
 | Eval | 8 | The eval passes for the agent, matches the baseline, and fails for a known-bad model | `tests/eval` |
 
 Things I chose not to test: CSS layout, and the live Claude API in PR checks (cost, flakiness; it
