@@ -150,7 +150,7 @@ What I chose, and why, in one place:
 | **Evaluated** | 23 cases on six criteria, 3 repeats, against a baseline; run on real Claude as well as the scripted model | Repeats and a baseline are what make a non-deterministic model measurable |
 | **Mocked** | The model in tests (scripted), the payment provider (in memory), the shop data (sample files) | Each fake keeps the one property the design relies on: same message format, idempotency, realistic bad rows |
 | **Not tested** | CSS layout; the live model in PR checks | Low risk, and too slow and costly per PR |
-| **Deferred** | Login, background workers, multi-turn chat, a container, a structured "money sent" field | Listed under [With more time](#with-more-time), in rough order of value |
+| **Deferred** | Login, background workers, multi-turn chat, a container, a structured "money sent" field | Each one is listed under [With more time](#with-more-time) |
 
 ## Assumptions
 
