@@ -26,6 +26,8 @@ class ClaudeLLM:
                 max_tokens=self.max_tokens,
                 system=system,
                 tools=[{**t, "strict": True} for t in tools],
+                # one call per turn, so a failed lookup is seen before the eligibility check runs
+                tool_choice={"type": "auto", "disable_parallel_tool_use": True},
                 messages=messages,
                 output_config={"effort": self.effort},
                 betas=[FALLBACK_BETA],

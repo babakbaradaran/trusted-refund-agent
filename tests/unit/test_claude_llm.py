@@ -47,7 +47,8 @@ def test_request_shape():
     assert sent["tools"][0]["strict"] is True
     assert sent["output_config"] == {"effort": "low"}
     assert sent["fallbacks"] == "default" and sent["betas"] == ["server-side-fallback-2026-07-01"]
-    assert "thinking" not in sent and "tool_choice" not in sent
+    assert "thinking" not in sent
+    assert sent["tool_choice"] == {"type": "auto", "disable_parallel_tool_use": True}
 
 
 def test_tool_use_is_parsed_and_content_kept_for_the_transcript():
