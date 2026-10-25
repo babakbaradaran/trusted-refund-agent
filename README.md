@@ -341,4 +341,6 @@ Quality:
 - Calibrate the judge model against human labels before trusting it more.
 - Contract tests against the real payments and orders APIs; load test the approval endpoint.
 - An LLM-based classifier alongside the keyword guardrail, evaluated on a red-team set.
+- Replace the "money was sent" wording check with a structured field the model must fill in.
+  Live Claude broke the pattern three times with normal sentences; patterns will always lag real language.
 - Package the app in a container and run the smoke test against it in CI.
