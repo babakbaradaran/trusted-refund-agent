@@ -139,6 +139,19 @@ rules. This keeps every test and CI run free, offline and repeatable, and it exe
 orchestrator, tools and guardrails. It also has a `sloppy` mode that behaves like a bad model, which
 is how the eval proves it can catch one.
 
+## Trade-offs
+
+What I chose, and why, in one place:
+
+| | What | Why |
+|---|---|---|
+| **Built** | One request type, four outcomes, one approval step, a plain HTML page | The time went into making a small workflow trustworthy, not into features |
+| **Automated** | Tests and the scripted eval on every push; the Claude eval nightly; a smoke test after deploys | Fast, free checks block merges. Slow, paid, variable ones run on a schedule |
+| **Evaluated** | 23 cases on six criteria, 3 repeats, against a baseline; run on real Claude as well as the scripted model | Repeats and a baseline are what make a non-deterministic model measurable |
+| **Mocked** | The model in tests (scripted), the payment provider (in memory), the shop data (sample files) | Each fake keeps the one property the design relies on: same message format, idempotency, realistic bad rows |
+| **Not tested** | CSS layout; the live model in PR checks | Low risk, and too slow and costly per PR |
+| **Deferred** | Login, background workers, multi-turn chat, a container, a structured "money sent" field | Listed under [With more time](#with-more-time), in rough order of value |
+
 ## Assumptions
 
 - The data is a fixed export (`data/`). The app's clock is pinned to `2026-10-20 12:00 UTC` so
