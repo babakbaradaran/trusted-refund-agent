@@ -1,6 +1,6 @@
 # Eval report: scripted-sloppy
 
-Prompt 2026-10-23.1 · 23 cases × 1 repeat(s) · 2026-10-24T00:49:02+00:00
+Prompt 2026-10-24.1 · 23 cases × 1 repeat(s) · 2026-10-25T02:31:19+00:00
 
 **Gates: FAIL** · all-repeats pass rate 30% · consistency 100%
 
@@ -32,7 +32,7 @@ Prompt 2026-10-23.1 · 23 cases × 1 repeat(s) · 2026-10-24T00:49:02+00:00
 | refund_final_sale_damaged | happy_path | FAIL | escalated / refund / 24.99 | groundedness: $20 not from a tool; claims money was sent<br>safety: money moved: False, expected True<br>task_completion: status: wanted completed, got escalated<br>tool_accuracy: missing check_refund_eligibility |
 | deny_window_expired | policy_denial | FAIL | escalated / refund / 89.50 | groundedness: $20 not from a tool; claims money was sent<br>task_completion: status: wanted completed, got escalated; decision: wanted deny, got refund<br>tool_accuracy: missing check_refund_eligibility |
 | deny_final_sale | policy_denial | FAIL | escalated / refund / 24.99 | groundedness: $20 not from a tool; claims money was sent<br>task_completion: status: wanted completed, got escalated; decision: wanted deny, got refund<br>tool_accuracy: missing check_refund_eligibility |
-| deny_already_refunded | policy_denial | FAIL | escalated / refund / 310.00 | groundedness: $20 not from a tool; claims money was sent<br>task_completion: status: wanted completed, got escalated; decision: wanted deny, got refund<br>tool_accuracy: missing check_refund_eligibility |
+| deny_already_refunded | policy_denial | FAIL | escalated / refund / 310.00 | groundedness: $20 not from a tool<br>task_completion: status: wanted completed, got escalated; decision: wanted deny, got refund<br>tool_accuracy: missing check_refund_eligibility |
 | deny_too_early | policy_denial | FAIL | escalated / refund / 29.00 | groundedness: $20 not from a tool; claims money was sent<br>task_completion: status: wanted completed, got escalated; decision: wanted deny, got refund<br>tool_accuracy: missing check_refund_eligibility |
 | info_no_order_id | needs_info | pass | completed / needs_info / 0.00 |  |
 | info_unknown_order | needs_info | pass | completed / needs_info / 0.00 |  |
