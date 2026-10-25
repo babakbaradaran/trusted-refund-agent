@@ -39,10 +39,11 @@ Demo API keys (set your own with `API_KEYS`):
 Run the checks:
 
 ```bash
-pytest                                        # everything (236 tests, ~35 s)
+pytest                                        # everything (251 tests, ~45 s)
 pytest tests/unit tests/data tests/integration tests/api
 pytest tests/browser                          # Playwright, saves screenshots to reports/screenshots
 python -m evals.run_eval --model scripted --repeats 3     # AI eval, writes reports/eval/
+python -m evals.run_eval --model claude --repeats 3 --judge   # same eval on real Claude (needs a key)
 python scripts/smoke_test.py http://127.0.0.1:8000        # post-deploy smoke test
 ```
 
@@ -154,12 +155,12 @@ and silent failures, so those get the most tests.
 
 | Layer | Count | What it proves | Where |
 |---|---|---|---|
-| Unit | 117 | Policy table and property-based policy rules (Hypothesis), tool registry (validation, timeout, retry, crash), guardrails, agent loop with fake models, Claude adapter with a fake client | `tests/unit` |
+| Unit | 130 | Policy table and property-based policy rules (Hypothesis), tool registry (validation, timeout, retry, crash), guardrails, agent loop with fake models, Claude adapter with a fake client | `tests/unit` |
 | Data | 39 | Raw CSV values are parsed and cleaned correctly; the 5 bad rows are quarantined with a reason; every source row is accounted for; API output matches the source and never leaks a full email | `tests/data` |
 | Integration | 31 | Real tools + store + scripted model: approval flow, reload from store, double approve, edited reply, second refund for the same order, payment timeouts, simultaneous approvals, and every injected failure | `tests/integration` |
 | API | 38 | Success paths, input validation (422), missing/unknown key (401), wrong role (403), 404, 409, outages, clean 500 with request ID | `tests/api` |
 | Browser | 3 | Agent submits, sees $1,249.00 waiting, cannot approve; supervisor approves; refund recorded. Unsafe request shows as blocked. Payment outage shows "Refund was NOT sent" and no money moves | `tests/browser` |
-| Eval | 8 | The eval passes for the agent, matches the baseline, and fails for a known-bad model | `tests/eval` |
+| Eval | 10 | The eval passes for the agent, matches the baseline, and fails for a known-bad model | `tests/eval` |
 
 A saved run of the whole suite is in `reports/tests/` (`full-run.txt`, plus `junit.xml` with every test by name).
 CI uploads the same files on every run.
@@ -205,6 +206,44 @@ made-up $20 credit. It fails four of six gates, and every drop shows up as a reg
 ([report](reports/eval/scripted.md)). The eval also found a real gap during development: when the
 agent itself chose to escalate, the supervisor saw no reason. That is fixed in commit
 "Show the agent's reason when it escalates".
+
+### Live results with Claude
+
+The same 23 cases, 3 repeats each, run against `claude-opus-5-5` on my machine
+([report](reports/eval/claude.md)). It took three rounds:
+
+| Criterion | Run 1 | Run 2 | Run 3 | Gate |
+|---|---|---|---|---|
+| Task completion | 96% | 91% | 99% | 90% |
+| Groundedness | 96% | 96% | 100% | 100% |
+| Relevance | 100% | 100% | 100% | 85% |
+| Tool accuracy | 87% | 100% | 99% | 90% |
+| Safety | 100% | 97% | 100% | 100% |
+| Failure handling | 100% | 100% | 100% | 100% |
+| Consistency across repeats | 100% | 91% | 96% | |
+
+Claude picked the right decision and amount from the start. Most misses were my checks being too
+literal about real wording, which the scripted model never produced:
+
+- "You'll get a confirmation **once the refund has been issued**" was read as a claim that money was
+  sent. Future-tense phrases no longer count.
+- "$499.99 minus the **$100.00 already refunded**" was read the same way. It is a true fact about an
+  earlier refund, so it is allowed when the amount matches that earlier refund.
+- "I've sent it on **for processing**" is a hand-off, not a payout. Widening the pattern to catch
+  "has already been sent" (a real gap) briefly made this one fire, which is what run 2 shows.
+- When a lookup failed, repeating the customer's own order number was flagged as invented.
+
+Two were real behaviour, fixed outside the checks:
+
+- Claude called the lookup and the eligibility check **in parallel**, so a failed lookup didn't stop
+  the second call. It now makes one tool call per turn.
+- "Order not found" was escalated because the prompt said to escalate on tool errors. Prompt
+  `2026-10-24.1` says to ask the customer for the right number instead.
+
+The one miss left is genuine variance: for "my grinder stopped working", Claude once decided the
+reason didn't fit any refund category and escalated instead of denying. That is a safe outcome, so I
+left it. The judge model scored 100% on tone, relevance and matching the decision, and 98% on
+"invents nothing". A full run takes about 7 minutes (6 seconds per agent run on average).
 
 ## Injected failures
 
@@ -272,8 +311,11 @@ call").
 
 ## Limitations
 
-- The live Claude path is tested with a fake client, not against the real API. No key was available
-  while building. The nightly job is where it would be measured.
+- Live Claude results come from runs on my own machine. The API key is deliberately not stored on
+  GitHub, so the nightly job falls back to the scripted model there. A team would add the key as a
+  repository secret.
+- 23 cases × 3 repeats is enough to find problems, not to give tight numbers. One case flipping
+  moves a rate by about 1.5 points.
 - Guardrail patterns for prompt injection are keyword-based. They catch the obvious cases; a
   determined attacker could phrase around them. The real protection is that the model can't move
   money and its answers are checked against tool results.
