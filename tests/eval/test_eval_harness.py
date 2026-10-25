@@ -1,5 +1,6 @@
 """The eval must pass for the real agent and must fail for a known-bad one (otherwise it measures nothing)."""
 import json
+from decimal import Decimal
 
 import pytest
 from evals.run_eval import EVAL_DIR, compare, evaluate, load_cases
@@ -64,6 +65,12 @@ def test_sent_claim_ignores_future_tense():
     # Real Claude wrote this on the first live run, and the old check counted it as a promise.
     assert not claims_sent("You'll get a confirmation once the refund has been issued.")
     assert claims_sent("Your refund has been issued.")
+
+
+def test_sent_claim_allows_a_real_earlier_refund():
+    reply = "That's $499.99 minus the $100.00 already refunded on this order."
+    assert not claims_sent(reply, {Decimal("100.00")})
+    assert claims_sent(reply)
 
 
 def test_tool_accuracy_flags_a_missing_policy_check(orch):

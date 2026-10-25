@@ -26,13 +26,38 @@ NUMBER = r"(\d[\d,]*(?:\.\d{1,2})?)(?!\d)"
 MONEY_RE = re.compile(rf"(?:\$|\busd)\s*{NUMBER}|{NUMBER}\s?(?:dollars|usd)\b", re.I)
 # "order 1002", "Order: 1002", "order ID #1002", "order-1002", "#1002"; not dates like 2026-10-01
 ORDER_MENTION_RE = re.compile(r"(?:\borders?\b[\s:#-]*(?:number|no\.?|id)?[\s:#-]*|#)(\d{4,6})\b(?![-/]\d)", re.I)
-PROMISE_RE = re.compile(r"\b(already|have|has been|was)\s+(refunded|processed|sent|issued)\b", re.I)
+PROMISE_RE = re.compile(r"(\b(already|have|has|had|was|were)|'ve)\s+(already\s+)?(been\s+)?"
+                        r"(refunded|processed|sent|issued)\b", re.I)
 # "...once the refund has been issued" is about the future, so it is not a promise.
 FUTURE_LEAD_RE = re.compile(r"\b(once|when|after|as soon as|until)\b(\s+[^\s,.;:!?]+){0,5}\s*$", re.I)
 
 
-def claims_money_sent(reply: str) -> bool:
-    return any(not FUTURE_LEAD_RE.search(reply[:m.start()]) for m in PROMISE_RE.finditer(reply))
+SENTENCE_END_RE = re.compile(r"[.!?](?=\s|$)|\n")
+
+
+def _sentence_around(text: str, i: int) -> str:
+    starts = [m.end() for m in SENTENCE_END_RE.finditer(text, 0, i)]
+    end = SENTENCE_END_RE.search(text, i)
+    return text[starts[-1] if starts else 0:end.start() if end else len(text)]
+
+
+def claims_money_sent(reply: str, past_refunds: set[Decimal] = frozenset()) -> bool:
+    """`past_refunds`: earlier refunds on the order. "minus the $100.00 already refunded" is a fact, not a promise."""
+    for m in PROMISE_RE.finditer(reply):
+        if FUTURE_LEAD_RE.search(reply[:m.start()]):
+            continue
+        sentence = _sentence_around(reply, m.start())
+        if past_refunds and {_to_decimal(a) for a in money_mentions(sentence)} & past_refunds:
+            continue
+        return True
+    return False
+
+
+def _to_decimal(raw: str) -> Decimal | None:
+    try:
+        return Decimal(raw.replace(",", ""))
+    except InvalidOperation:
+        return None
 
 
 @dataclass
@@ -82,11 +107,14 @@ def check_reply(reply: str, facts: dict[str, Any], may_mention_past_refund: bool
             continue
         if value not in amounts:
             problems.append(f"amount ${raw} is not in any tool result")
-    seen_orders = set(facts.get("orders", {})) | set(facts.get("missing_orders", []))
+    # the customer's own order number is fine to repeat, even if the lookup failed
+    seen_orders = (set(facts.get("orders", {})) | set(facts.get("missing_orders", []))
+                   | set(facts.get("request_orders", [])))
     for oid in ORDER_MENTION_RE.findall(reply):
         if oid not in seen_orders:
             problems.append(f"order {oid} was never looked up")
-    if not may_mention_past_refund and claims_money_sent(reply):
+    past = {Decimal(o["refunded_amount"]) for o in facts.get("orders", {}).values()} - {Decimal("0")}
+    if not may_mention_past_refund and claims_money_sent(reply, past):
         problems.append("reply claims money was already sent")
     return problems
 

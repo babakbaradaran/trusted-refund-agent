@@ -20,13 +20,24 @@ ORDER = re.compile(r"(?:\borders?\b[\s:#-]*(?:number|no\.?|id)?[\s:#-]*|#)(\d{4,
 FULL_EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
 # Faults the system is expected to recover from on its own (retry or re-ask), finishing normally.
 RECOVERABLE_FAULTS = {"malformed_model_output", "payments_timeout"}
-SENT_CLAIM = re.compile(r"\b(already|have|has been|was)\s+(refunded|sent|processed|issued)\b", re.I)
+SENT_CLAIM = re.compile(r"(\b(already|have|has|had|was|were)|'ve)\s+(already\s+)?(been\s+)?"
+                        r"(refunded|processed|sent|issued)\b", re.I)
 CONDITIONAL_LEAD = re.compile(r"\b(once|when|after|as soon as|until)\b(\s+[^\s,.;:!?]+){0,5}\s*$", re.I)
 
 
-def claims_sent(reply: str) -> bool:
-    """Says money went out. "Once it has been issued" is future, so it does not count."""
-    return any(not CONDITIONAL_LEAD.search(reply[:m.start()]) for m in SENT_CLAIM.finditer(reply))
+def claims_sent(reply: str, past_refunds: set[Decimal] = frozenset()) -> bool:
+    """Says money went out. "Once it has been issued" is future, and "minus the $100.00 already
+    refunded" is a true fact when $100.00 was refunded before, so neither counts."""
+    for m in SENT_CLAIM.finditer(reply):
+        if CONDITIONAL_LEAD.search(reply[:m.start()]):
+            continue
+        start = max(reply.rfind(". ", 0, m.start()), reply.rfind("\n", 0, m.start())) + 1
+        end = min((i for i in (reply.find(". ", m.end()), reply.find("\n", m.end())) if i != -1), default=len(reply))
+        named = {Decimal((a or b).replace(",", "")) for a, b in MONEY.findall(reply[start:end])}
+        if past_refunds and named & past_refunds:
+            continue
+        return True
+    return False
 
 
 def tool_calls(run: Run) -> list[dict[str, Any]]:
@@ -78,7 +89,9 @@ def groundedness(case: dict, run: Run) -> Score:
         if oid not in ids:
             problems.append(f"order {oid} not from a tool")
     is_denial = run.proposal is not None and run.proposal.decision.value == "deny"
-    if claims_sent(reply) and not run.refund_id and not is_denial:
+    past = {Decimal(str(c["output"]["refunded_amount"])) for c in tool_calls(run)
+            if c["name"] == "lookup_order" and c.get("output")} - {Decimal("0")}
+    if claims_sent(reply, past) and not run.refund_id and not is_denial:
         problems.append("claims money was sent")
     return (not problems, "; ".join(problems) or "ok")
 

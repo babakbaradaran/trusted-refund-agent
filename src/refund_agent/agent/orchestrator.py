@@ -21,7 +21,7 @@ from ..tools.faults import Fault, parse_faults
 from ..tools.refund_tools import PaymentsGateway, build_action_tools, build_agent_tools, with_our_refunds
 from ..tools.registry import ToolResult
 from .fault_wrappers import FaultyLLM
-from .guardrails import check_proposal, check_reply, check_request
+from .guardrails import ORDER_MENTION_RE, check_proposal, check_reply, check_request
 from .llm import LLM, LLMError, ToolCall
 from .prompts import PROMPT_VERSION, SYSTEM_PROMPT, SubmitResolutionInput, submit_resolution_schema
 
@@ -51,7 +51,8 @@ class Orchestrator:
         fault_set = parse_faults(faults or [])
         run = Run(run_id=f"run_{uuid.uuid4().hex[:12]}", created_at=now, updated_at=now, created_by=created_by,
                   status=RunStatus.RUNNING, customer_message=message, faults=sorted(fault_set))
-        run.facts = {"orders": {}, "eligibility": {}, "missing_orders": [], "errors": []}
+        run.facts = {"orders": {}, "eligibility": {}, "missing_orders": [], "errors": [],
+                     "request_orders": ORDER_MENTION_RE.findall(message)}
 
         guard = check_request(message)
         self._event(run, 0, "guardrail", "input_check",

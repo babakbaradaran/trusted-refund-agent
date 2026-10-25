@@ -98,6 +98,28 @@ def test_real_promises_are_still_flagged(reply):
     assert check_reply(reply, FACTS) == ["reply claims money was already sent"]
 
 
+PARTLY_REFUNDED = {**FACTS, "orders": {"1008": {"order_id": "1008", "amount": "499.99", "refunded_amount": "100.00"}},
+                   "eligibility": {"1008": {"order_id": "1008", "eligible": True, "eligible_amount": "399.99"}}}
+
+
+def test_earlier_refund_may_be_mentioned():
+    # Claude's wording from the first live eval run
+    reply = "That's $499.99 minus the $100.00 already refunded on this order, so $399.99."
+    assert check_reply(reply, PARTLY_REFUNDED) == []
+
+
+def test_new_refund_is_still_not_already_sent_on_a_partly_refunded_order():
+    assert check_reply("Your $399.99 has already been sent.", PARTLY_REFUNDED) == [
+        "reply claims money was already sent"]
+
+
+def test_order_number_from_the_customer_is_not_invented():
+    facts = {**FACTS, "orders": {}, "errors": [{"tool": "lookup_order", "code": "TIMEOUT"}]}
+    reply = "Sorry your order 1002 arrived broken. A colleague will follow up."
+    assert check_reply(reply, facts) == ["order 1002 was never looked up"]
+    assert check_reply(reply, {**facts, "request_orders": ["1002"]}) == []
+
+
 def proposal(decision, amount="0.00", order_id="1001"):
     return Proposal(decision=decision, order_id=order_id, amount=Decimal(amount), reason="damaged",
                     customer_reply="Hi Maya, thanks for writing about order 1001.")
