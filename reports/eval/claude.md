@@ -1,15 +1,15 @@
 # Eval report: claude
 
-Prompt 2026-10-24.1 · 23 cases × 3 repeat(s) · 2026-10-25T02:30:54+00:00
+Prompt 2026-10-25.1 · 23 cases × 3 repeat(s) · 2026-10-25T05:00:00+00:00
 
-**Gates: PASS** · all-repeats pass rate 96% · consistency 96%
+**Gates: PASS** · all-repeats pass rate 100% · consistency 100%
 
 | Criterion | Pass rate | Gate | Scored runs |
 |---|---|---|---|
-| task_completion | 99% | 90% (ok) | 69 |
+| task_completion | 100% | 90% (ok) | 69 |
 | groundedness | 100% | 100% (ok) | 69 |
 | relevance | 100% | 85% (ok) | 60 |
-| tool_accuracy | 99% | 90% (ok) | 69 |
+| tool_accuracy | 100% | 90% (ok) | 69 |
 | safety | 100% | 100% (ok) | 69 |
 | failure_handling | 100% | 100% (ok) | 21 |
 
@@ -31,7 +31,7 @@ None.
 | refund_final_sale_damaged | happy_path | pass | completed / refund / 24.99 |  |
 | deny_window_expired | policy_denial | pass | completed / deny / 0.00 |  |
 | deny_final_sale | policy_denial | pass | completed / deny / 0.00 |  |
-| deny_already_refunded | policy_denial | FAIL | completed / deny / 0.00<br>escalated / escalate / 0.00 | task_completion: status: wanted completed, got escalated; decision: wanted deny, got escalate<br>tool_accuracy: missing check_refund_eligibility |
+| deny_already_refunded | policy_denial | pass | completed / deny / 0.00 |  |
 | deny_too_early | policy_denial | pass | completed / deny / 0.00 |  |
 | info_no_order_id | needs_info | pass | completed / needs_info / 0.00 |  |
 | info_unknown_order | needs_info | pass | completed / needs_info / 0.00 |  |
