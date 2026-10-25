@@ -23,13 +23,15 @@ RECOVERABLE_FAULTS = {"malformed_model_output", "payments_timeout"}
 SENT_CLAIM = re.compile(r"(\b(already|have|has|had|was|were)|'ve)\s+(already\s+)?(been\s+)?"
                         r"(refunded|processed|sent|issued)\b", re.I)
 CONDITIONAL_LEAD = re.compile(r"\b(once|when|after|as soon as|until)\b(\s+[^\s,.;:!?]+){0,5}\s*$", re.I)
+PASSED_ON = re.compile(r"^(\s+[^\s,.;:!?]+){0,4}?\s+(for (processing|review|approval)"
+                       r"|to (our|the|a) (team|colleague|supervisor|manager))\b", re.I)
 
 
 def claims_sent(reply: str, past_refunds: set[Decimal] = frozenset()) -> bool:
     """Says money went out. "Once it has been issued" is future, and "minus the $100.00 already
     refunded" is a true fact when $100.00 was refunded before, so neither counts."""
     for m in SENT_CLAIM.finditer(reply):
-        if CONDITIONAL_LEAD.search(reply[:m.start()]):
+        if CONDITIONAL_LEAD.search(reply[:m.start()]) or PASSED_ON.search(reply[m.end():]):
             continue
         start = max(reply.rfind(". ", 0, m.start()), reply.rfind("\n", 0, m.start())) + 1
         end = min((i for i in (reply.find(". ", m.end()), reply.find("\n", m.end())) if i != -1), default=len(reply))

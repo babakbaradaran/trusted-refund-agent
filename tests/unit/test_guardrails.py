@@ -84,6 +84,8 @@ def test_denial_may_say_the_order_was_already_refunded():
     "You'll get a confirmation once the refund has been issued.",
     "We'll email you when it has been processed.",
     "Allow 3 days after it was issued for your bank to show it.",
+    "I've sent the refund through for processing.",  # live Claude wording; a hand-off, not a payout
+    "I've sent your request to our team.",
 ])
 def test_future_tense_is_not_a_promise(reply):
     assert check_reply(reply, FACTS) == []
@@ -93,6 +95,8 @@ def test_future_tense_is_not_a_promise(reply):
     "Good news, it has been issued.",
     "When you wrote in, we checked. Your refund was sent today.",
     "Once you wrote, we checked it, and we have already refunded you.",
+    "I've sent you $42.00 today.",
+    "Your money has already been sent.",
 ])
 def test_real_promises_are_still_flagged(reply):
     assert check_reply(reply, FACTS) == ["reply claims money was already sent"]

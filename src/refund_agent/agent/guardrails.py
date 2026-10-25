@@ -30,6 +30,9 @@ PROMISE_RE = re.compile(r"(\b(already|have|has|had|was|were)|'ve)\s+(already\s+)
                         r"(refunded|processed|sent|issued)\b", re.I)
 # "...once the refund has been issued" is about the future, so it is not a promise.
 FUTURE_LEAD_RE = re.compile(r"\b(once|when|after|as soon as|until)\b(\s+[^\s,.;:!?]+){0,5}\s*$", re.I)
+# "I've sent it on for processing" hands the case on; no money moved.
+HANDOFF_TAIL_RE = re.compile(r"^(\s+[^\s,.;:!?]+){0,4}?\s+(for (processing|review|approval)"
+                             r"|to (our|the|a) (team|colleague|supervisor|manager))\b", re.I)
 
 
 SENTENCE_END_RE = re.compile(r"[.!?](?=\s|$)|\n")
@@ -44,7 +47,7 @@ def _sentence_around(text: str, i: int) -> str:
 def claims_money_sent(reply: str, past_refunds: set[Decimal] = frozenset()) -> bool:
     """`past_refunds`: earlier refunds on the order. "minus the $100.00 already refunded" is a fact, not a promise."""
     for m in PROMISE_RE.finditer(reply):
-        if FUTURE_LEAD_RE.search(reply[:m.start()]):
+        if FUTURE_LEAD_RE.search(reply[:m.start()]) or HANDOFF_TAIL_RE.search(reply[m.end():]):
             continue
         sentence = _sentence_around(reply, m.start())
         if past_refunds and {_to_decimal(a) for a in money_mentions(sentence)} & past_refunds:

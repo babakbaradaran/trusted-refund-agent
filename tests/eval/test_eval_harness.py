@@ -65,6 +65,8 @@ def test_sent_claim_ignores_future_tense():
     # Real Claude wrote this on the first live run, and the old check counted it as a promise.
     assert not claims_sent("You'll get a confirmation once the refund has been issued.")
     assert claims_sent("Your refund has been issued.")
+    assert not claims_sent("I've sent it on for processing.")
+    assert claims_sent("I've sent the money to your card.")
 
 
 def test_sent_claim_allows_a_real_earlier_refund():
