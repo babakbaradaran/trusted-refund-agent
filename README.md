@@ -224,17 +224,17 @@ agent itself chose to escalate, the supervisor saw no reason. That is fixed in c
 ### Live results with Claude
 
 The same 23 cases, 3 repeats each, run against `claude-opus-5-5` on my machine
-([report](reports/eval/claude.md)). It took three rounds:
+([report](reports/eval/claude.md)). It took four rounds:
 
-| Criterion | Run 1 | Run 2 | Run 3 | Gate |
-|---|---|---|---|---|
-| Task completion | 96% | 91% | 99% | 90% |
-| Groundedness | 96% | 96% | 100% | 100% |
-| Relevance | 100% | 100% | 100% | 85% |
-| Tool accuracy | 87% | 100% | 99% | 90% |
-| Safety | 100% | 97% | 100% | 100% |
-| Failure handling | 100% | 100% | 100% | 100% |
-| Consistency across repeats | 100% | 91% | 96% | |
+| Criterion | Run 1 | Run 2 | Run 3 | Run 4 | Gate |
+|---|---|---|---|---|---|
+| Task completion | 96% | 91% | 99% | 100% | 90% |
+| Groundedness | 96% | 96% | 100% | 100% | 100% |
+| Relevance | 100% | 100% | 100% | 100% | 85% |
+| Tool accuracy | 87% | 100% | 99% | 100% | 90% |
+| Safety | 100% | 97% | 100% | 100% | 100% |
+| Failure handling | 100% | 100% | 100% | 100% | 100% |
+| Consistency across repeats | 100% | 91% | 96% | 100% | |
 
 Claude picked the right decision and amount from the start. Most misses were my checks being too
 literal about real wording, which the scripted model never produced:
@@ -247,17 +247,22 @@ literal about real wording, which the scripted model never produced:
   "has already been sent" (a real gap) briefly made this one fire, which is what run 2 shows.
 - When a lookup failed, repeating the customer's own order number was flagged as invented.
 
-Two were real behaviour, fixed outside the checks:
+Three were real behaviour, fixed outside the checks:
 
 - Claude called the lookup and the eligibility check **in parallel**, so a failed lookup didn't stop
   the second call. It now makes one tool call per turn.
 - "Order not found" was escalated because the prompt said to escalate on tool errors. Prompt
   `2026-10-24.1` says to ask the customer for the right number instead.
+- On refunds still waiting for a supervisor, Claude sometimes wrote "**we've approved** the refund"
+  (2 of 12 such replies in run 3). No check caught it. The draft is only sent after approval, so it
+  never reached a customer early, but it was wrong. Prompt `2026-10-25.1` says to say the order
+  qualifies, never that it was approved: 0 of 69 replies in run 4 (and 0 of 20 in a targeted check).
 
-The one miss left is genuine variance: for "my grinder stopped working", Claude once decided the
-reason didn't fit any refund category and escalated instead of denying. That is a safe outcome, so I
-left it. The judge model scored 100% on tone, relevance and matching the decision, and 98% on
-"invents nothing". A full run takes about 7 minutes (6 seconds per agent run on average).
+In run 3, the one miss was variance: for "my grinder stopped working", Claude once escalated instead
+of denying, judging the reason unclear. Run 4 gave the same answer every time, but with 3 repeats
+that may be chance, so I don't count it as fixed. The judge model scored 100% on tone, relevance and
+matching the decision, and 98% on "invents nothing". A full run takes about 7 minutes (6 seconds per
+agent run on average).
 
 ## Injected failures
 
@@ -358,6 +363,7 @@ Quality:
 - Let code, not the model, write the sentence about the refund's status ("a colleague will review
   your refund", "your refund of $42.00 has been sent"), built from the run's real state. The model
   would write only the explanation. Live Claude broke the "money was sent" wording check three
-  times with normal sentences, and once wrote "I've approved" while a supervisor still had to
-  decide. Patterns will always lag real language; the wording check would stay as a backstop.
+  times with normal sentences, and wrote "we've approved" while a supervisor still had to decide.
+  A prompt rule fixed that in testing, but prompts only make it unlikely. Patterns will always lag
+  real language; the wording check would stay as a backstop.
 - Package the app in a container and run the smoke test against it in CI.
