@@ -27,6 +27,12 @@ MONEY_RE = re.compile(rf"(?:\$|\busd)\s*{NUMBER}|{NUMBER}\s?(?:dollars|usd)\b", 
 # "order 1002", "Order: 1002", "order ID #1002", "order-1002", "#1002"; not dates like 2026-10-01
 ORDER_MENTION_RE = re.compile(r"(?:\borders?\b[\s:#-]*(?:number|no\.?|id)?[\s:#-]*|#)(\d{4,6})\b(?![-/]\d)", re.I)
 PROMISE_RE = re.compile(r"\b(already|have|has been|was)\s+(refunded|processed|sent|issued)\b", re.I)
+# "...once the refund has been issued" is about the future, so it is not a promise.
+FUTURE_LEAD_RE = re.compile(r"\b(once|when|after|as soon as|until)\b(\s+[^\s,.;:!?]+){0,5}\s*$", re.I)
+
+
+def claims_money_sent(reply: str) -> bool:
+    return any(not FUTURE_LEAD_RE.search(reply[:m.start()]) for m in PROMISE_RE.finditer(reply))
 
 
 @dataclass
@@ -80,7 +86,7 @@ def check_reply(reply: str, facts: dict[str, Any], may_mention_past_refund: bool
     for oid in ORDER_MENTION_RE.findall(reply):
         if oid not in seen_orders:
             problems.append(f"order {oid} was never looked up")
-    if not may_mention_past_refund and PROMISE_RE.search(reply):
+    if not may_mention_past_refund and claims_money_sent(reply):
         problems.append("reply claims money was already sent")
     return problems
 

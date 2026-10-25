@@ -3,7 +3,7 @@ import json
 
 import pytest
 from evals.run_eval import EVAL_DIR, compare, evaluate, load_cases
-from evals.scorers import groundedness, tool_accuracy
+from evals.scorers import claims_sent, groundedness, tool_accuracy
 
 pytestmark = pytest.mark.eval
 
@@ -58,6 +58,12 @@ def test_groundedness_flags_an_invented_amount(orch):
     assert groundedness(case, run) == (True, "ok")
     run.proposal = run.proposal.model_copy(update={"customer_reply": "Refund of $1,500.00 for order 1002."})
     assert groundedness(case, run)[0] is False
+
+
+def test_sent_claim_ignores_future_tense():
+    # Real Claude wrote this on the first live run, and the old check counted it as a promise.
+    assert not claims_sent("You'll get a confirmation once the refund has been issued.")
+    assert claims_sent("Your refund has been issued.")
 
 
 def test_tool_accuracy_flags_a_missing_policy_check(orch):

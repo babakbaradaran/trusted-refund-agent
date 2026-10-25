@@ -21,6 +21,12 @@ FULL_EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
 # Faults the system is expected to recover from on its own (retry or re-ask), finishing normally.
 RECOVERABLE_FAULTS = {"malformed_model_output", "payments_timeout"}
 SENT_CLAIM = re.compile(r"\b(already|have|has been|was)\s+(refunded|sent|processed|issued)\b", re.I)
+CONDITIONAL_LEAD = re.compile(r"\b(once|when|after|as soon as|until)\b(\s+[^\s,.;:!?]+){0,5}\s*$", re.I)
+
+
+def claims_sent(reply: str) -> bool:
+    """Says money went out. "Once it has been issued" is future, so it does not count."""
+    return any(not CONDITIONAL_LEAD.search(reply[:m.start()]) for m in SENT_CLAIM.finditer(reply))
 
 
 def tool_calls(run: Run) -> list[dict[str, Any]]:
@@ -72,7 +78,7 @@ def groundedness(case: dict, run: Run) -> Score:
         if oid not in ids:
             problems.append(f"order {oid} not from a tool")
     is_denial = run.proposal is not None and run.proposal.decision.value == "deny"
-    if SENT_CLAIM.search(reply) and not run.refund_id and not is_denial:
+    if claims_sent(reply) and not run.refund_id and not is_denial:
         problems.append("claims money was sent")
     return (not problems, "; ".join(problems) or "ok")
 

@@ -80,6 +80,24 @@ def test_denial_may_say_the_order_was_already_refunded():
     assert check_proposal(deny, facts).decision == Decision.DENY
 
 
+@pytest.mark.parametrize("reply", [
+    "You'll get a confirmation once the refund has been issued.",
+    "We'll email you when it has been processed.",
+    "Allow 3 days after it was issued for your bank to show it.",
+])
+def test_future_tense_is_not_a_promise(reply):
+    assert check_reply(reply, FACTS) == []
+
+
+@pytest.mark.parametrize("reply", [
+    "Good news, it has been issued.",
+    "When you wrote in, we checked. Your refund was sent today.",
+    "Once you wrote, we checked it, and we have already refunded you.",
+])
+def test_real_promises_are_still_flagged(reply):
+    assert check_reply(reply, FACTS) == ["reply claims money was already sent"]
+
+
 def proposal(decision, amount="0.00", order_id="1001"):
     return Proposal(decision=decision, order_id=order_id, amount=Decimal(amount), reason="damaged",
                     customer_reply="Hi Maya, thanks for writing about order 1001.")
