@@ -28,6 +28,8 @@ from .prompts import PROMPT_VERSION, SYSTEM_PROMPT, SubmitResolutionInput, submi
 BLOCKED_REPLY = ("Thanks for your message. I can only help with refunds for your own orders. "
                  "A member of our team will review this request.")
 HOLDING_REPLY = "Thanks for your patience. A colleague is reviewing your request and will reply shortly."
+REJECTED_REPLY = ("Thanks for your patience. We've reviewed your request and can't offer a refund on this "
+                  "order. A colleague will contact you with the details.")
 MAX_BAD_RESOLUTIONS = 2
 
 
@@ -215,7 +217,7 @@ class Orchestrator:
                                         "Approve again to check it before rejecting.")
             run.approval = Approval(by=by, at=_utcnow(), approved=False, note=note)
             self._event(run, 0, "approval", "rejected", {"by": by, "note": note})
-            run.final_reply = None
+            run.final_reply = REJECTED_REPLY  # the supervisor's note stays internal
             return self._finish(run, RunStatus.REJECTED)
 
     def _execute_refund(self, run: Run, step: int) -> None:

@@ -71,6 +71,7 @@ def test_supervisor_rejects(client, app):
     run_id = start(client).json()["run_id"]
     res = client.post(f"/api/runs/{run_id}/reject", json={"note": "duplicate claim"}, headers=SUPERVISOR)
     assert res.json()["status"] == "rejected" and app.state.payments.payouts == []
+    assert "can't offer a refund" in res.json()["final_reply"]
 
 
 def test_request_id_header(client):

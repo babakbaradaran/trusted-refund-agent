@@ -1,7 +1,7 @@
 """Real tools + real store + scripted model, end to end below the API."""
 import pytest
 
-from refund_agent.agent.orchestrator import InvalidTransition
+from refund_agent.agent.orchestrator import REJECTED_REPLY, InvalidTransition
 from refund_agent.agent.scripted_llm import ScriptedLLM
 from refund_agent.domain.models import RunStatus
 
@@ -26,7 +26,9 @@ def test_state_survives_reload_from_store(orch):
 def test_reject_moves_no_money(orch, payments):
     run = orch.start("Order 1002 is broken", "agent")
     out = orch.reject(run.run_id, by="supervisor", note="customer abusing returns")
-    assert out.status == RunStatus.REJECTED and payments.payouts == [] and out.final_reply is None
+    assert out.status == RunStatus.REJECTED and payments.payouts == []
+    # the customer still gets an answer, and the internal note is not in it
+    assert out.final_reply == REJECTED_REPLY and "abusing" not in out.final_reply
 
 
 def test_cannot_approve_twice(orch, payments):
