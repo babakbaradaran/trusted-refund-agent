@@ -77,7 +77,8 @@ flowchart LR
    A denial must be backed by a "not eligible" result. Every dollar amount and order number in the
    reply must appear in a tool result. If any check fails, the run goes to a human instead.
 5. Small refunds are paid automatically. Larger ones wait. The supervisor can edit the reply, then
-   approve or reject. Only then does `issue_refund` run.
+   approve or reject. Only an approval runs `issue_refund`. A rejection sends the customer a short,
+   fixed reply; the supervisor's note stays internal.
 
 States: `running → awaiting_approval → completed | rejected`, or `escalated`, `failed`, `blocked`.
 
@@ -150,7 +151,7 @@ What I chose, and why, in one place:
 | **Evaluated** | 23 cases on six criteria, 3 repeats, against a baseline; run on real Claude as well as the scripted model | Repeats and a baseline are what make a non-deterministic model measurable |
 | **Mocked** | The model in tests (scripted), the payment provider (in memory), the shop data (sample files) | Each fake keeps the one property the design relies on: same message format, idempotency, realistic bad rows |
 | **Not tested** | CSS layout; the live model in PR checks | Low risk, and too slow and costly per PR |
-| **Deferred** | Login, background workers, multi-turn chat, a container, a structured "money sent" field | Each one is listed under [With more time](#with-more-time) |
+| **Deferred** | Login, background workers, multi-turn chat, a container, refund-status sentences written by code instead of the model | Each one is listed under [With more time](#with-more-time) |
 
 ## Assumptions
 
@@ -354,6 +355,9 @@ Quality:
 - Calibrate the judge model against human labels before trusting it more.
 - Contract tests against the real payments and orders APIs; load test the approval endpoint.
 - An LLM-based classifier alongside the keyword guardrail, evaluated on a red-team set.
-- Replace the "money was sent" wording check with a structured field the model must fill in.
-  Live Claude broke the pattern three times with normal sentences; patterns will always lag real language.
+- Let code, not the model, write the sentence about the refund's status ("a colleague will review
+  your refund", "your refund of $42.00 has been sent"), built from the run's real state. The model
+  would write only the explanation. Live Claude broke the "money was sent" wording check three
+  times with normal sentences, and once wrote "I've approved" while a supervisor still had to
+  decide. Patterns will always lag real language; the wording check would stay as a backstop.
 - Package the app in a container and run the smoke test against it in CI.
